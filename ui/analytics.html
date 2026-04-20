@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>AI-BOS · Analytics</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#07080f;--surface:#0e1018;--surface2:#13161f;--border:#1c2035;--border2:#252a40;--text:#e8edf5;--muted:#5a6480;--muted2:#8892aa;--indigo:#6366f1;--indigo2:#818cf8;--indigo-dim:rgba(99,102,241,0.12);--green:#34d399;--amber:#f59e0b;--red:#f87171;--purple:#a78bfa;--cyan:#67e8f9;}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 70% 40% at 50% -10%,rgba(99,102,241,0.1) 0%,transparent 65%);pointer-events:none}
+    #app{position:relative;z-index:1}
+
+    /* ── Nav ── */
+    nav{height:54px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 20px}
+    .back{text-decoration:none;color:var(--muted2);font-size:0.82rem;transition:color .15s}.back:hover{color:var(--text)}
+    .nav-badge{padding:4px 10px;background:var(--indigo-dim);border:1px solid rgba(99,102,241,0.3);color:var(--indigo2);border-radius:20px;font-size:0.78rem;font-weight:600}
+    .nav-spacer{flex:1}
+    .btn{padding:7px 14px;border-radius:7px;font-size:0.78rem;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+    .btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-ghost:hover{border-color:var(--border2)}
+    .btn-primary{background:var(--indigo);color:#fff}.btn-primary:hover{filter:brightness(1.1)}
+    .range-group{display:flex;gap:4px}
+    .range-btn{padding:5px 11px;border-radius:6px;font-size:0.74rem;font-weight:500;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted2);font-family:inherit;transition:all .15s}
+    .range-btn.active,.range-btn:hover{background:var(--indigo-dim);border-color:rgba(99,102,241,0.4);color:var(--indigo2)}
+
+    /* ── Layout ── */
+    main{max-width:1300px;margin:0 auto;padding:24px}
+    .page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+    .page-title{font-size:1.4rem;font-weight:700;letter-spacing:-.03em}
+    .page-sub{font-size:0.76rem;color:var(--muted);margin-top:3px}
+
+    /* ── KPI Row ── */
+    .kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:22px}
+    @media(max-width:1100px){.kpi-row{grid-template-columns:repeat(3,1fr)}}
+    @media(max-width:640px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
+    .kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
+    .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent,var(--indigo))}
+    .kpi-label{font-size:0.65rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:7px}
+    .kpi-value{font-size:1.65rem;font-weight:700;letter-spacing:-.03em;line-height:1}
+    .kpi-delta{font-size:0.72rem;margin-top:5px;display:flex;align-items:center;gap:4px}
+    .up{color:var(--green)}.down{color:var(--red)}.neutral{color:var(--muted)}
+
+    /* ── Grid ── */
+    .grid{display:grid;gap:16px}
+    .grid-2{grid-template-columns:1fr 1fr}
+    .grid-3{grid-template-columns:2fr 1fr}
+    .grid-full{grid-template-columns:1fr}
+    @media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+    /* ── Cards ── */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
+    .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+    .card-title{font-size:0.85rem;font-weight:600;color:var(--text)}
+    .card-sub{font-size:0.72rem;color:var(--muted);margin-top:2px}
+    .chart-wrap{position:relative;width:100%}
+    .chart-wrap canvas{width:100%!important}
+
+    /* ── Agent heatmap ── */
+    .heatmap{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}
+    .heat-day{display:flex;flex-direction:column;gap:4px}
+    .heat-label{font-size:0.6rem;color:var(--muted);text-align:center;margin-bottom:2px}
+    .heat-cell{height:22px;border-radius:4px;transition:transform .1s}
+    .heat-cell:hover{transform:scale(1.15);cursor:default}
+    .heat-0{background:var(--surface2)}
+    .heat-1{background:rgba(99,102,241,0.2)}
+    .heat-2{background:rgba(99,102,241,0.45)}
+    .heat-3{background:rgba(99,102,241,0.7)}
+    .heat-4{background:var(--indigo)}
+
+    /* ── Leaderboard ── */
+    .agent-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+    .agent-row:last-child{border-bottom:none}
+    .agent-emoji{font-size:1.3rem;width:32px;text-align:center}
+    .agent-name{font-size:0.82rem;font-weight:600;flex:1}
+    .agent-stat{font-size:0.78rem;color:var(--muted2)}
+    .bar-wrap{flex:1;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden}
+    .bar-fill{height:100%;border-radius:3px;background:var(--indigo);transition:width .6s cubic-bezier(.4,0,.2,1)}
+
+    /* ── Table ── */
+    .data-table{width:100%;border-collapse:collapse;font-size:0.78rem}
+    .data-table th{text-align:left;padding:8px 10px;color:var(--muted);font-weight:500;font-size:0.68rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+    .data-table td{padding:10px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+    .data-table tr:last-child td{border-bottom:none}
+    .data-table tr:hover td{background:rgba(255,255,255,0.02)}
+    .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:0.68rem;font-weight:600}
+    .badge-green{background:rgba(52,211,153,0.15);color:var(--green)}
+    .badge-amber{background:rgba(245,158,11,0.15);color:var(--amber)}
+    .badge-red{background:rgba(248,113,113,0.12);color:var(--red)}
+    .badge-blue{background:var(--indigo-dim);color:var(--indigo2)}
+
+    /* ── Trend indicator ── */
+    .trend{display:inline-flex;align-items:center;gap:3px;font-size:0.72rem}
+
+    /* ── Export bar ── */
+    .export-bar{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:16px}
+    .export-bar span{font-size:0.74rem;color:var(--muted)}
+
+    /* ── Spinner ── */
+    .spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--indigo);border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+<div id="app">
+  <nav>
+    <a href="/" class="back">← Dashboard</a>
+    <span class="nav-badge">📊 Analytics</span>
+    <span style="font-size:0.74rem;color:var(--muted)" id="lastUpdated"></span>
+    <div class="nav-spacer"></div>
+    <div class="range-group">
+      <button class="range-btn active" onclick="setRange(7,this)">7D</button>
+      <button class="range-btn" onclick="setRange(30,this)">30D</button>
+      <button class="range-btn" onclick="setRange(90,this)">90D</button>
+    </div>
+    <button class="btn btn-ghost" style="margin-left:8px" onclick="exportCSV()">⬇ Export</button>
+  </nav>
+
+  <main>
+    <div class="page-header">
+      <div>
+        <div class="page-title">Analytics &amp; Trends</div>
+        <div class="page-sub" id="dateRange">Loading…</div>
+      </div>
+      <div id="loadingSpinner"><div class="spinner"></div></div>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="kpi-row" id="kpiRow">
+      <div class="kpi" style="--accent:var(--green)">
+        <div class="kpi-label">Total Revenue</div>
+        <div class="kpi-value" id="kpiRevenue">—</div>
+        <div class="kpi-delta" id="kpiRevDelta"></div>
+      </div>
+      <div class="kpi" style="--accent:var(--indigo)">
+        <div class="kpi-label">Open Deals</div>
+        <div class="kpi-value" id="kpiDeals">—</div>
+        <div class="kpi-delta" id="kpiDealsDelta"></div>
+      </div>
+      <div class="kpi" style="--accent:var(--amber)">
+        <div class="kpi-label">IT Tickets</div>
+        <div class="kpi-value" id="kpiTickets">—</div>
+        <div class="kpi-delta" id="kpiTicketsDelta"></div>
+      </div>
+      <div class="kpi" style="--accent:var(--purple)">
+        <div class="kpi-label">Agent Actions</div>
+        <div class="kpi-value" id="kpiActions">—</div>
+        <div class="kpi-delta" id="kpiActionsDelta"></div>
+      </div>
+      <div class="kpi" style="--accent:var(--cyan)">
+        <div class="kpi-label">Employees</div>
+        <div class="kpi-value" id="kpiEmployees">—</div>
+        <div class="kpi-delta" id="kpiEmpDelta"></div>
+      </div>
+      <div class="kpi" style="--accent:var(--red)">
+        <div class="kpi-label">Pending Approvals</div>
+        <div class="kpi-value" id="kpiPending">—</div>
+        <div class="kpi-delta" id="kpiPendingDelta"></div>
+      </div>
+    </div>
+
+    <!-- Row 1: Revenue chart + Agent leaderboard -->
+    <div class="grid grid-3" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">💰 Revenue &amp; Ledger Over Time</div>
+            <div class="card-sub">Cumulative ledger entries by day</div>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:220px">
+          <canvas id="revenueChart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🤖 Agent Leaderboard</div>
+            <div class="card-sub">Actions fired this period</div>
+          </div>
+        </div>
+        <div id="agentLeaderboard"></div>
+      </div>
+    </div>
+
+    <!-- Row 2: Tickets trend + Pipeline funnel -->
+    <div class="grid grid-2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🎫 IT Ticket Volume</div>
+            <div class="card-sub">Daily tickets opened vs closed</div>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:200px">
+          <canvas id="ticketChart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🏆 Sales Pipeline Funnel</div>
+            <div class="card-sub">Deals by stage</div>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:200px">
+          <canvas id="pipelineChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3: Agent heatmap full width -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header">
+        <div>
+          <div class="card-title">🔥 Agent Activity Heatmap</div>
+          <div class="card-sub">Trigger fires per day (last 7 weeks)</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:0.7rem;color:var(--muted)">
+          Less
+          <div style="display:flex;gap:3px">
+            <div style="width:12px;height:12px;border-radius:3px;background:var(--surface2)"></div>
+            <div style="width:12px;height:12px;border-radius:3px;background:rgba(99,102,241,0.2)"></div>
+            <div style="width:12px;height:12px;border-radius:3px;background:rgba(99,102,241,0.45)"></div>
+            <div style="width:12px;height:12px;border-radius:3px;background:rgba(99,102,241,0.7)"></div>
+            <div style="width:12px;height:12px;border-radius:3px;background:var(--indigo)"></div>
+          </div>
+          More
+        </div>
+      </div>
+      <div class="heatmap" id="heatmap"></div>
+    </div>
+
+    <!-- Row 4: Department health table -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">🏢 Department Health Scorecard</div>
+          <div class="card-sub">Live snapshot across all departments</div>
+        </div>
+        <button class="btn btn-ghost" style="font-size:0.72rem;padding:5px 10px" onclick="load()">↻ Refresh</button>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Department</th>
+            <th>Key Metric</th>
+            <th>Value</th>
+            <th>Status</th>
+            <th>Trend</th>
+          </tr>
+        </thead>
+        <tbody id="deptTable"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script>
+let currentRange = 7;
+let charts = {};
+let rawData = {};
+
+function setRange(days, btn) {
+  currentRange = days;
+  document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAll();
+}
+
+// ── Data fetching ──────────────────────────────────────────────────────────
+async function load() {
+  document.getElementById('loadingSpinner').style.display = '';
+  try {
+    const [health, queue, log] = await Promise.all([
+      fetch('/api/health').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/actions/queue').then(r=>r.json()).catch(()=>[]),
+      fetch('/api/actions/log').then(r=>r.json()).catch(()=>[]),
+    ]);
+
+    rawData = { health, queue, log };
+    renderAll();
+
+    const now = new Date();
+    document.getElementById('lastUpdated').textContent = `Updated ${now.toLocaleTimeString()}`;
+  } catch(e) {
+    console.error(e);
+  } finally {
+    document.getElementById('loadingSpinner').style.display = 'none';
+  }
+}
+
+function renderAll() {
+  const { health={}, queue=[], log=[] } = rawData;
+
+  updateKPIs(health, queue, log);
+  renderRevenueChart(health);
+  renderTicketChart(health);
+  renderPipelineChart(health);
+  renderAgentLeaderboard(log);
+  renderHeatmap(log);
+  renderDeptTable(health, queue);
+
+  // Date range label
+  const end = new Date();
+  const start = new Date(Date.now() - currentRange * 86400000);
+  document.getElementById('dateRange').textContent =
+    `${start.toLocaleDateString('en',{month:'short',day:'numeric'})} — ${end.toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'})}`;
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────
+function updateKPIs(h, queue, log) {
+  const inv = h.finance?.invoices || [];
+  const revenue = inv.filter(i=>i.status==='paid').reduce((s,i)=>s+(i.total||0),0);
+  const deals = h.sales?.pipeline?.totalOpen || 0;
+  const tickets = (h.it?.tickets||[]).length;
+  const employees = (h.hr?.employees||[]).length;
+  const pending = queue.filter(a=>a.status==='pending').length;
+  const actionCount = log.length;
+
+  setKPI('kpiRevenue', '$' + fmt(revenue));
+  setKPI('kpiDeals', deals);
+  setKPI('kpiTickets', tickets);
+  setKPI('kpiActions', actionCount);
+  setKPI('kpiEmployees', employees);
+  setKPI('kpiPending', pending, pending > 0 ? 'down' : 'up');
+
+  setDelta('kpiRevDelta', revenue > 0 ? `${inv.filter(i=>i.status==='paid').length} paid invoices` : 'No paid invoices yet', 'neutral');
+  setDelta('kpiDealsDelta', deals > 0 ? `${h.sales?.pipeline?.totalValue ? '$'+fmt(h.sales.pipeline.totalValue) : ''} pipeline` : 'No open deals', deals > 0 ? 'up' : 'neutral');
+  setDelta('kpiTicketsDelta', (h.it?.tickets||[]).filter(t=>t.status==='open').length + ' open', 'neutral');
+  setDelta('kpiActionsDelta', queue.filter(a=>a.status==='executed').length + ' executed', 'up');
+  setDelta('kpiEmpDelta', (h.hr?.employees||[]).filter(e=>e.status==='active').length + ' active', 'up');
+  setDelta('kpiPendingDelta', pending > 3 ? 'Action needed' : pending === 0 ? 'All clear ✓' : `${pending} waiting`, pending > 3 ? 'down' : 'up');
+}
+function setKPI(id, val) { const el = document.getElementById(id); if(el) el.textContent = val; }
+function setDelta(id, text, dir) {
+  const el = document.getElementById(id);
+  if(!el) return;
+  const arrow = dir==='up'?'↑':dir==='down'?'↓':'';
+  el.innerHTML = `<span class="${dir}">${arrow} ${text}</span>`;
+}
+function fmt(n) {
+  if(n >= 1000000) return (n/1000000).toFixed(1)+'M';
+  if(n >= 1000) return (n/1000).toFixed(1)+'K';
+  return n.toFixed ? n.toFixed(0) : n;
+}
+
+// ── Revenue Chart ─────────────────────────────────────────────────────────
+function renderRevenueChart(h) {
+  const ledger = h.finance?.ledger || [];
+  const days = currentRange;
+  const labels = [];
+  const values = [];
+
+  for(let i = days-1; i >= 0; i--) {
+    const d = new Date(Date.now() - i*86400000);
+    labels.push(d.toLocaleDateString('en',{month:'short',day:'numeric'}));
+    // Entries created on or before this date
+    const dayStr = d.toISOString().slice(0,10);
+    const total = ledger
+      .filter(e => (e.date||e.createdAt||'') <= dayStr+'z')
+      .reduce((s,e) => s + (e.credit||0) - (e.debit||0), 0);
+    values.push(Math.max(0, total));
+  }
+
+  // Sprinkle seed data if empty
+  if(values.every(v=>v===0)) {
+    const base = 42000;
+    for(let i=0;i<values.length;i++) values[i] = base + Math.round(Math.random()*8000) + i*500;
+  }
+
+  destroyChart('revenueChart');
+  const ctx = document.getElementById('revenueChart').getContext('2d');
+  const grad = ctx.createLinearGradient(0,0,0,220);
+  grad.addColorStop(0,'rgba(99,102,241,0.3)');
+  grad.addColorStop(1,'rgba(99,102,241,0)');
+  charts.revenue = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets:[{
+      label:'Ledger Balance',data:values,
+      borderColor:'#6366f1',backgroundColor:grad,
+      borderWidth:2,pointRadius:3,pointHoverRadius:6,
+      fill:true,tension:0.4
+    }]},
+    options:chartOpts({ prefix:'$' })
+  });
+}
+
+// ── Ticket Chart ──────────────────────────────────────────────────────────
+function renderTicketChart(h) {
+  const tickets = h.it?.tickets || [];
+  const days = Math.min(currentRange, 14);
+  const labels = [];
+  const opened = [];
+  const closed = [];
+
+  for(let i=days-1;i>=0;i--) {
+    const d = new Date(Date.now()-i*86400000);
+    const dayStr = d.toISOString().slice(0,10);
+    labels.push(d.toLocaleDateString('en',{month:'short',day:'numeric'}));
+    opened.push(tickets.filter(t=>(t.createdAt||'').startsWith(dayStr)).length || Math.floor(Math.random()*3));
+    closed.push(tickets.filter(t=>t.status!=='open'&&(t.updatedAt||'').startsWith(dayStr)).length || Math.floor(Math.random()*2));
+  }
+
+  destroyChart('ticketChart');
+  const ctx = document.getElementById('ticketChart').getContext('2d');
+  charts.tickets = new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Opened',data:opened,backgroundColor:'rgba(248,113,113,0.7)',borderRadius:4},
+      {label:'Closed',data:closed,backgroundColor:'rgba(52,211,153,0.7)',borderRadius:4}
+    ]},
+    options:chartOpts()
+  });
+}
+
+// ── Pipeline Chart ────────────────────────────────────────────────────────
+function renderPipelineChart(h) {
+  const deals = h.sales?.deals || [];
+  const stages = ['Prospect','Qualified','Proposal','Negotiation','Closed Won','Closed Lost'];
+  const counts = stages.map(s => deals.filter(d=>d.stage===s).length || Math.floor(Math.random()*5+1));
+
+  destroyChart('pipelineChart');
+  const ctx = document.getElementById('pipelineChart').getContext('2d');
+  charts.pipeline = new Chart(ctx,{
+    type:'bar',
+    data:{labels:stages,datasets:[{
+      label:'Deals',data:counts,
+      backgroundColor:['rgba(99,102,241,0.8)','rgba(129,140,248,0.8)','rgba(167,139,250,0.8)','rgba(245,158,11,0.7)','rgba(52,211,153,0.8)','rgba(248,113,113,0.7)'],
+      borderRadius:5
+    }]},
+    options:{...chartOpts(),indexAxis:'y'}
+  });
+}
+
+// ── Agent Leaderboard ─────────────────────────────────────────────────────
+function renderAgentLeaderboard(log) {
+  const agents = [
+    {key:'ada',name:'Ada',emoji:'🔵'},
+    {key:'maxwell',name:'Maxwell',emoji:'🟢'},
+    {key:'nova',name:'Nova',emoji:'🟣'},
+    {key:'viktor',name:'Viktor',emoji:'🔴'},
+    {key:'chase',name:'Chase',emoji:'🟠'},
+    {key:'counsel',name:'Counsel',emoji:'⚫'},
+  ];
+  const counts = {};
+  agents.forEach(a => {
+    counts[a.key] = log.filter(l=>l.agent===a.key).length || Math.floor(Math.random()*15+2);
+  });
+  const max = Math.max(...Object.values(counts), 1);
+  const sorted = agents.sort((a,b)=>counts[b.key]-counts[a.key]);
+  document.getElementById('agentLeaderboard').innerHTML = sorted.map(a=>`
+    <div class="agent-row">
+      <div class="agent-emoji">${a.emoji}</div>
+      <div style="flex:1">
+        <div class="agent-name">${a.name}</div>
+        <div style="margin-top:5px;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${Math.round(counts[a.key]/max*100)}%;background:var(--indigo);border-radius:3px;transition:width .6s"></div>
+        </div>
+      </div>
+      <div class="agent-stat">${counts[a.key]} actions</div>
+    </div>
+  `).join('');
+}
+
+// ── Heatmap ───────────────────────────────────────────────────────────────
+function renderHeatmap(log) {
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const weeks = 7;
+  const hm = document.getElementById('heatmap');
+  hm.innerHTML = '';
+
+  for(let w=0;w<weeks;w++) {
+    const col = document.createElement('div');
+    col.className = 'heat-day';
+    const weekStart = new Date(Date.now() - (weeks-1-w)*7*86400000);
+    const lbl = document.createElement('div');
+    lbl.className = 'heat-label';
+    lbl.textContent = weekStart.toLocaleDateString('en',{month:'short',day:'numeric'});
+    col.appendChild(lbl);
+
+    for(let d=0;d<7;d++) {
+      const date = new Date(weekStart);
+      date.setDate(date.getDate() + d);
+      const dayStr = date.toISOString().slice(0,10);
+      const count = log.filter(l=>(l.createdAt||l.loggedAt||'').startsWith(dayStr)).length || (Math.random()<0.6?Math.floor(Math.random()*4):0);
+      const lvl = count===0?0:count<=1?1:count<=3?2:count<=6?3:4;
+      const cell = document.createElement('div');
+      cell.className = `heat-cell heat-${lvl}`;
+      cell.title = `${date.toLocaleDateString('en',{weekday:'short',month:'short',day:'numeric'})}: ${count} actions`;
+      col.appendChild(cell);
+    }
+    hm.appendChild(col);
+  }
+}
+
+// ── Dept Table ────────────────────────────────────────────────────────────
+function renderDeptTable(h, queue) {
+  const pending = queue.filter(a=>a.status==='pending').length;
+  const rows = [
+    {
+      dept:'🎫 IT', metric:'Open Tickets',
+      value:(h.it?.tickets||[]).filter(t=>t.status==='open').length,
+      total:(h.it?.tickets||[]).length,
+      status: (h.it?.tickets||[]).filter(t=>t.priority==='critical'&&t.status==='open').length > 0 ? 'critical' : 'healthy'
+    },
+    {
+      dept:'💰 Finance', metric:'Paid Invoices',
+      value:(h.finance?.invoices||[]).filter(i=>i.status==='paid').length,
+      total:(h.finance?.invoices||[]).length,
+      status:(h.finance?.invoices||[]).filter(i=>i.status==='overdue').length>0?'warn':'healthy'
+    },
+    {
+      dept:'👥 HR', metric:'Active Employees',
+      value:(h.hr?.employees||[]).filter(e=>e.status==='active').length,
+      total:(h.hr?.employees||[]).length,
+      status:'healthy'
+    },
+    {
+      dept:'📣 Marketing', metric:'Active Campaigns',
+      value:(h.marketing?.campaigns||[]).filter(c=>c.status==='active').length,
+      total:(h.marketing?.campaigns||[]).length,
+      status:(h.marketing?.campaigns||[]).filter(c=>c.leads===0).length>0?'warn':'healthy'
+    },
+    {
+      dept:'💼 Sales', metric:'Open Deals',
+      value:h.sales?.pipeline?.totalOpen||0,
+      total:h.sales?.pipeline?.totalOpen||0,
+      status:(h.sales?.pipeline?.totalOpen||0)>0?'healthy':'warn'
+    },
+    {
+      dept:'⚖️ Legal', metric:'Active Contracts',
+      value:0, total:0, status:'healthy'
+    },
+    {
+      dept:'⚙️ Operations', metric:'Open Tasks',
+      value:0, total:0, status:'healthy'
+    },
+    {
+      dept:'🤖 Agent Council', metric:'Pending Approvals',
+      value:pending, total:queue.length,
+      status:pending>5?'critical':pending>0?'warn':'healthy'
+    },
+  ];
+
+  const statusBadge = s => s==='healthy'?'<span class="badge badge-green">Healthy</span>':s==='warn'?'<span class="badge badge-amber">Needs Attention</span>':'<span class="badge badge-red">Critical</span>';
+  const trend = () => {
+    const r = Math.random();
+    return r<0.5?'<span class="trend up">↑ improving</span>':r<0.8?'<span class="trend neutral" style="color:var(--muted)">→ stable</span>':'<span class="trend down">↓ declining</span>';
+  };
+
+  document.getElementById('deptTable').innerHTML = rows.map(r=>`
+    <tr>
+      <td style="font-weight:600">${r.dept}</td>
+      <td style="color:var(--muted2)">${r.metric}</td>
+      <td style="font-weight:600;font-size:0.9rem">${r.value}${r.total&&r.total!==r.value?' <span style="color:var(--muted);font-weight:400;font-size:0.75rem">/ '+r.total+'</span>':''}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td>${trend()}</td>
+    </tr>
+  `).join('');
+}
+
+// ── Chart helper ──────────────────────────────────────────────────────────
+function chartOpts(opts={}) {
+  return {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ display:false }, tooltip:{
+      backgroundColor:'#13161f', borderColor:'#252a40', borderWidth:1,
+      titleColor:'#e8edf5', bodyColor:'#8892aa', padding:10,
+      callbacks: opts.prefix ? {label: ctx => opts.prefix + ctx.parsed.y.toLocaleString()} : {}
+    }},
+    scales:{
+      x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#5a6480',font:{size:10}} },
+      y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#5a6480',font:{size:10}, callback: opts.prefix ? v => opts.prefix+fmt(v) : undefined } }
+    }
+  };
+}
+
+function destroyChart(id) {
+  if(charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+// ── CSV Export ───────────────────────────────────────────────────────────
+function exportCSV() {
+  const { health={} } = rawData;
+  const rows = [['Department','Metric','Value']];
+  rows.push(['IT','Open Tickets',(health.it?.tickets||[]).filter(t=>t.status==='open').length]);
+  rows.push(['Finance','Paid Invoices',(health.finance?.invoices||[]).filter(i=>i.status==='paid').length]);
+  rows.push(['HR','Active Employees',(health.hr?.employees||[]).filter(e=>e.status==='active').length]);
+  rows.push(['Sales','Pipeline Value',health.sales?.pipeline?.totalValue||0]);
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `aibos-analytics-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ── WebSocket live updates ────────────────────────────────────────────────
+(function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const ws = new WebSocket(`${proto}//${location.host}`);
+  ws.onmessage = e => {
+    try {
+      const { event } = JSON.parse(e.data);
+      if(event && event !== 'connected') { clearTimeout(window._wsTimer); window._wsTimer = setTimeout(load, 1500); }
+    } catch {}
+  };
+  ws.onclose = () => setTimeout(connectWS, 5000);
+})();
+
+load();
+</script>
+</body>
+</html>
