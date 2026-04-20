@@ -21,7 +21,19 @@ import { initTriggers, fireTrigger, startScheduledChecks, getCustomTriggers, sav
 import { getQueue, getLog, approveAction, rejectAction, queueAction } from './agent-council/actions.js';
 import { getGoals, updateGoal, evaluateGoals, getGoalHistory } from './agent-council/goals.js';
 
+import fs from 'fs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// ── Ensure knowledge dirs exist (Railway has no persistent files by default) ──
+const knowledgeDirs = [
+  'knowledge', 'knowledge/departments', 'knowledge/departments/council',
+  'knowledge/departments/finance', 'knowledge/departments/hr',
+  'knowledge/departments/it', 'knowledge/departments/marketing',
+  'knowledge/departments/messages', 'knowledge/departments/sales',
+  'knowledge/departments/legal', 'knowledge/departments/ops',
+];
+knowledgeDirs.forEach(d => fs.mkdirSync(path.join(__dirname, d), { recursive: true }));
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 

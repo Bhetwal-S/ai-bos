@@ -230,8 +230,11 @@ async function postSlack({ message, channel, username }) {
 
 // Post to War Room thread
 function postWarRoom({ subject, body, from, priority }) {
-  // Dynamic import to avoid circular deps
-  const { WarRoomStore } = await_sync_import();
+  const { WarRoomStore } = get_stores();
+  if (!WarRoomStore) {
+    console.warn('[ACTION:WAR_ROOM] WarRoomStore not available yet');
+    return { posted: false, note: 'WarRoomStore unavailable' };
+  }
   WarRoomStore.addThread({ subject, body, from: from || '🤖 Agent', to: 'all', priority: priority || 'normal' });
   return { posted: true, destination: 'war-room' };
 }
