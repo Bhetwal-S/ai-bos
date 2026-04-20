@@ -1,0 +1,14 @@
+services:
+  ai-bos:
+    build: .
+    container_name: ai-bos
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      # Persist all AI data across restarts
+      - ./knowledge:/app/knowledge
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
