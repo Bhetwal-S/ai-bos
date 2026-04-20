@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>AI-BOS · Company Hub</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#07080f;--surface:#0e1018;--surface2:#13161f;--border:#1c2035;--border2:#252a40;--text:#e8edf5;--muted:#5a6480;--muted2:#8892aa;--indigo:#6366f1;--indigo2:#818cf8;--indigo-dim:rgba(99,102,241,0.12);--green:#34d399;--amber:#f59e0b;--red:#f87171;--purple:#a78bfa;--orange:#fb923c;}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 60% 40% at 30% 0%,rgba(167,139,250,0.08) 0%,transparent 70%);pointer-events:none}
+    #app{position:relative;z-index:1}
+
+    nav{height:54px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 20px}
+    .back{text-decoration:none;color:var(--muted2);font-size:0.82rem;transition:color .15s}
+    .back:hover{color:var(--text)}
+    .nav-badge{padding:4px 10px;background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.3);color:var(--purple);border-radius:20px;font-size:0.78rem;font-weight:600}
+    .nav-sub{font-size:0.78rem;color:var(--muted)}
+    .nav-spacer{flex:1}
+    .btn{padding:6px 14px;border-radius:7px;font-size:0.78rem;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+    .btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+    .btn-ghost:hover{border-color:var(--border2)}
+    .btn-primary{background:var(--indigo);color:#fff}
+    .btn-primary:hover{filter:brightness(1.1)}
+
+    main{max-width:1400px;margin:0 auto;padding:24px;display:grid;grid-template-columns:260px 1fr;gap:16px;align-items:start}
+
+    /* SIDEBAR NAV */
+    .hub-nav{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;position:sticky;top:16px}
+    .hub-search{padding:12px}
+    .hub-search input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 11px;font-size:0.8rem;color:var(--text);outline:none;font-family:inherit;transition:border-color .2s}
+    .hub-search input:focus{border-color:var(--indigo)}
+    .hub-search input::placeholder{color:var(--muted)}
+    .hub-section{padding:6px 14px 2px;font-size:0.6rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border-top:1px solid var(--border);margin-top:4px}
+    .hub-section:first-of-type{border-top:none}
+    .hub-link{display:flex;align-items:center;gap:8px;padding:7px 14px;font-size:0.8rem;color:var(--muted2);cursor:pointer;transition:all .15s;border-radius:0;user-select:none}
+    .hub-link:hover{background:var(--surface2);color:var(--text)}
+    .hub-link.active{background:var(--indigo-dim);color:var(--indigo2)}
+    .hub-icon{font-size:0.9rem;width:16px;text-align:center;flex-shrink:0}
+    .hub-count{margin-left:auto;font-size:0.65rem;color:var(--muted);background:var(--border);padding:1px 5px;border-radius:8px}
+
+    /* MAIN CONTENT */
+    .hub-content{}
+    .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+    .page-title{font-size:1.2rem;font-weight:700;letter-spacing:-.02em}
+    .page-sub{font-size:0.75rem;color:var(--muted);margin-top:2px}
+
+    /* SEARCH BAR */
+    .global-search{position:relative;margin-bottom:16px}
+    .global-search input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 16px 11px 40px;font-size:0.88rem;color:var(--text);outline:none;font-family:inherit;transition:border-color .2s}
+    .global-search input:focus{border-color:var(--indigo)}
+    .global-search input::placeholder{color:var(--muted)}
+    .gs-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+
+    /* DOC GRID */
+    .doc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+    .doc-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+    .doc-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+    .doc-card-icon{font-size:1.4rem;margin-bottom:8px}
+    .doc-card-title{font-size:0.82rem;font-weight:600;margin-bottom:3px}
+    .doc-card-meta{font-size:0.7rem;color:var(--muted)}
+    .doc-card-bar{position:absolute;bottom:0;left:0;right:0;height:2px}
+
+    /* LIST */
+    .doc-list{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+    .doc-list-header{padding:13px 18px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .doc-list-title{font-size:0.84rem;font-weight:600}
+    .doc-row{display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+    .doc-row:last-child{border-bottom:none}
+    .doc-row:hover{background:var(--surface2)}
+    .doc-row-icon{font-size:1.1rem;flex-shrink:0}
+    .doc-row-info{flex:1;min-width:0}
+    .doc-row-title{font-size:0.82rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .doc-row-meta{font-size:0.7rem;color:var(--muted);margin-top:1px}
+    .doc-row-actions{display:flex;align-items:center;gap:8px}
+    .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.67rem;font-weight:500;border:1px solid}
+
+    /* WIKI EDITOR */
+    .wiki-editor{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+    .we-toolbar{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;gap:6px;align-items:center}
+    .we-btn{padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;font-size:0.74rem;color:var(--muted2);cursor:pointer;transition:all .15s}
+    .we-btn:hover{border-color:var(--border2);color:var(--text)}
+    .we-area{width:100%;min-height:200px;background:none;border:none;padding:16px;font-size:0.84rem;color:var(--text);outline:none;font-family:inherit;resize:vertical;line-height:1.7}
+    .we-area::placeholder{color:var(--muted)}
+
+    /* MODAL */
+    .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+    .modal-bg.open{display:flex}
+    .modal-box{background:var(--surface);border:1px solid var(--border2);border-radius:13px;width:600px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 30px 70px rgba(0,0,0,0.65)}
+    .modal-hd{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+    .modal-hd-title{font-size:0.9rem;font-weight:600}
+    .modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem}
+    .modal-bd{flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+    .modal-ft{padding:13px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+    .field label{font-size:0.74rem;color:var(--muted);display:block;margin-bottom:4px}
+    .field input,.field select,.field textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:0.82rem;color:var(--text);outline:none;font-family:inherit;transition:border-color .2s}
+    .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--indigo)}
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .live-dot{display:inline-block;width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+  </style>
+</head>
+<body>
+<div id="app">
+  <nav>
+    <a href="/dashboard" class="back">← AI-BOS</a>
+    <div class="nav-badge">📚 Company Hub</div>
+    <span class="nav-sub">Wiki · Docs · SOPs · Knowledge Base</span>
+    <div class="nav-spacer"></div>
+    <button class="btn btn-ghost" onclick="openDocModal()">+ New Document</button>
+  </nav>
+
+  <main>
+    <!-- LEFT NAV -->
+    <div class="hub-nav">
+      <div class="hub-search"><input id="nav-search" placeholder="🔍 Filter…" oninput="filterNav(this.value)"></div>
+
+      <div class="hub-section">Spaces</div>
+      <div class="hub-link active" onclick="showSpace('all',this)"><span class="hub-icon">🏠</span>All Documents<span class="hub-count" id="cnt-all">0</span></div>
+      <div class="hub-link" onclick="showSpace('wiki',this)"><span class="hub-icon">📖</span>Company Wiki<span class="hub-count" id="cnt-wiki">0</span></div>
+      <div class="hub-link" onclick="showSpace('sop',this)"><span class="hub-icon">📋</span>SOPs<span class="hub-count" id="cnt-sop">0</span></div>
+      <div class="hub-link" onclick="showSpace('policy',this)"><span class="hub-icon">🛡</span>Policies<span class="hub-count" id="cnt-policy">0</span></div>
+      <div class="hub-link" onclick="showSpace('report',this)"><span class="hub-icon">📊</span>Reports<span class="hub-count" id="cnt-report">0</span></div>
+
+      <div class="hub-section">Departments</div>
+      <div class="hub-link" onclick="showSpace('it',this)"><span class="hub-icon">☁️</span>IT & DevOps</div>
+      <div class="hub-link" onclick="showSpace('finance',this)"><span class="hub-icon">💰</span>Finance</div>
+      <div class="hub-link" onclick="showSpace('hr',this)"><span class="hub-icon">👥</span>HR & Talent</div>
+      <div class="hub-link" onclick="showSpace('marketing',this)"><span class="hub-icon">📣</span>Marketing</div>
+      <div class="hub-link" onclick="showSpace('sales',this)"><span class="hub-icon">📈</span>Sales</div>
+
+      <div class="hub-section">Quick Create</div>
+      <div class="hub-link" onclick="openDocModal('wiki')"><span class="hub-icon">+</span>New Wiki Page</div>
+      <div class="hub-link" onclick="openDocModal('sop')"><span class="hub-icon">+</span>New SOP</div>
+      <div class="hub-link" onclick="openDocModal('policy')"><span class="hub-icon">+</span>New Policy</div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="hub-content">
+      <div class="page-header">
+        <div>
+          <div class="page-title" id="space-title">All Documents</div>
+          <div class="page-sub" id="space-sub">Everything in the company knowledge base</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" onclick="openDocModal()">+ New</button>
+        </div>
+      </div>
+
+      <div class="global-search">
+        <span class="gs-icon">🔍</span>
+        <input id="doc-search" placeholder="Search documents, SOPs, policies…" oninput="searchDocs(this.value)">
+      </div>
+
+      <!-- Quick access cards -->
+      <div class="doc-grid" id="doc-cards">
+        <div class="doc-card" onclick="showSpace('wiki',null)"><div class="doc-card-icon">📖</div><div class="doc-card-title">Company Wiki</div><div class="doc-card-meta" id="qc-wiki">– pages</div><div class="doc-card-bar" style="background:#6366f1"></div></div>
+        <div class="doc-card" onclick="showSpace('sop',null)"><div class="doc-card-icon">📋</div><div class="doc-card-title">SOPs</div><div class="doc-card-meta" id="qc-sop">– procedures</div><div class="doc-card-bar" style="background:#34d399"></div></div>
+        <div class="doc-card" onclick="showSpace('policy',null)"><div class="doc-card-icon">🛡</div><div class="doc-card-title">Policies</div><div class="doc-card-meta" id="qc-policy">– documents</div><div class="doc-card-bar" style="background:#a78bfa"></div></div>
+      </div>
+
+      <!-- Document List -->
+      <div class="doc-list" id="doc-list">
+        <div class="doc-list-header">
+          <div class="doc-list-title">📄 Documents</div>
+          <span style="font-size:0.72rem;color:var(--muted)" id="doc-count">0 documents</span>
+        </div>
+        <div id="doc-rows">
+          <div style="padding:24px;text-align:center;color:var(--muted);font-size:0.78rem">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Inline Editor (shown when editing) -->
+      <div class="wiki-editor" id="wiki-editor" style="display:none;margin-top:14px">
+        <div class="we-toolbar">
+          <span style="font-size:0.82rem;font-weight:600;flex:1" id="editor-title">Untitled</span>
+          <button class="we-btn" onclick="insertMd('**','**')"><b>B</b></button>
+          <button class="we-btn" onclick="insertMd('_','_')"><i>I</i></button>
+          <button class="we-btn" onclick="insertMd('## ','')">H</button>
+          <button class="we-btn" onclick="insertMd('- ','')">List</button>
+          <button class="we-btn" onclick="insertMd('`','`')">Code</button>
+          <button class="we-btn" onclick="saveDoc()" style="background:var(--indigo);color:#fff;border-color:var(--indigo)">Save</button>
+          <button class="we-btn" onclick="closeEditor()">✕</button>
+        </div>
+        <textarea class="we-area" id="editor-body" placeholder="Start writing…&#10;&#10;Markdown supported: **bold**, _italic_, ## headings, - lists, `code`"></textarea>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- NEW DOCUMENT MODAL -->
+<div id="doc-modal" class="modal-bg" onclick="closeMOuter('doc-modal',event)">
+  <div class="modal-box">
+    <div class="modal-hd"><span class="modal-hd-title">New Document</span><button class="modal-close" onclick="closeM('doc-modal')">✕</button></div>
+    <div class="modal-bd">
+      <div class="field"><label>Title</label><input id="doc-title" placeholder="Document title"></div>
+      <div class="field-row">
+        <div class="field"><label>Type</label>
+          <select id="doc-type">
+            <option value="wiki">Wiki Page</option>
+            <option value="sop">SOP / Procedure</option>
+            <option value="policy">Policy</option>
+            <option value="report">Report</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="field"><label>Department</label>
+          <select id="doc-dept">
+            <option value="">General</option>
+            <option value="it">IT & DevOps</option>
+            <option value="finance">Finance</option>
+            <option value="hr">HR</option>
+            <option value="marketing">Marketing</option>
+            <option value="sales">Sales</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Tags (comma separated)</label><input id="doc-tags" placeholder="onboarding, process, q2"></div>
+      <div class="field"><label>Content</label><textarea id="doc-body" rows="8" placeholder="Write your document content here. Markdown supported."></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeM('doc-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="createDoc()">Create Document</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOKEN = localStorage.getItem('aibos_token');
+if (!TOKEN) location.href = '/login';
+const WS = localStorage.getItem('aibos_workspace') || 'default';
+async function api(url,opts={}){ return fetch(url,{headers:{Authorization:`Bearer ${TOKEN}`,'x-workspace':WS,'Content-Type':'application/json',...(opts.headers||{})}, ...opts}); }
+
+const TYPE_COLOR={wiki:'#6366f1',sop:'#34d399',policy:'#a78bfa',report:'#f59e0b',other:'#5a6480'};
+const TYPE_ICON={wiki:'📖',sop:'📋',policy:'🛡',report:'📊',other:'📄'};
+
+let allDocs=[], currentSpace='all', editingId=null;
+
+// localStorage key for docs (no backend endpoint yet — store locally + sync via hub API when available)
+const STORE_KEY=`aibos_docs_${WS}`;
+function readDocs(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)||'[]'); }catch{ return []; } }
+function writeDocs(docs){ localStorage.setItem(STORE_KEY, JSON.stringify(docs)); }
+
+// Seed with sample content if empty
+function seedDocs(){
+  if(readDocs().length>0) return;
+  const now=new Date().toISOString();
+  writeDocs([
+    {id:'d1',title:'Company Onboarding Guide',type:'wiki',dept:'hr',tags:['onboarding','hr'],body:'# Welcome to the Company\n\nThis guide covers everything you need to know in your first 30 days.\n\n## Day 1\n- Meet your team\n- Set up accounts\n- Review company handbook\n\n## First Week\n- Complete security training\n- Set up dev environment\n- 1:1 with manager',created:now,updated:now,status:'published',author:'System'},
+    {id:'d2',title:'IT Incident Response SOP',type:'sop',dept:'it',tags:['it','security','incident'],body:'# IT Incident Response Procedure\n\n## Severity Levels\n- **P1 Critical**: Service down, data breach\n- **P2 High**: Major degradation\n- **P3 Medium**: Minor issues\n\n## Steps\n1. Detect & alert\n2. Assess severity\n3. Assemble response team\n4. Contain & remediate\n5. Post-mortem',created:now,updated:now,status:'published',author:'System'},
+    {id:'d3',title:'Expense Reimbursement Policy',type:'policy',dept:'finance',tags:['finance','expenses'],body:'# Expense Reimbursement Policy\n\n## Eligible Expenses\n- Travel (economy class only)\n- Meals up to $50/day\n- Software tools with prior approval\n\n## Process\n1. Submit within 30 days\n2. Include receipts over $25\n3. Manager approval required over $500',created:now,updated:now,status:'published',author:'System'},
+    {id:'d4',title:'Marketing Brand Guidelines',type:'wiki',dept:'marketing',tags:['brand','marketing','design'],body:'# Brand Guidelines\n\n## Colors\n- Primary: #6366F1 (Indigo)\n- Secondary: #F59E0B (Amber)\n\n## Voice & Tone\n- Professional yet approachable\n- Data-driven\n- Solution-focused\n\n## Logo Usage\n- Minimum size: 24px\n- Clear space: 1x logo height on all sides',created:now,updated:now,status:'published',author:'System'},
+    {id:'d5',title:'Sales Qualification Framework',type:'sop',dept:'sales',tags:['sales','qualification'],body:'# BANT Qualification Framework\n\n**Budget**: Does the prospect have budget allocated?\n**Authority**: Are we talking to a decision maker?\n**Need**: Is there a clear problem we solve?\n**Timeline**: When do they need a solution?\n\n## Scoring\n- 4/4 → Hot lead, fast-track\n- 3/4 → Warm lead, nurture\n- 2/4 → Cool, long-term pipeline',created:now,updated:now,status:'published',author:'System'},
+    {id:'d6',title:'Remote Work Policy',type:'policy',dept:'',tags:['hr','remote','policy'],body:'# Remote Work Policy\n\n## Eligibility\nAll full-time employees after 90-day probation.\n\n## Requirements\n- Stable internet connection (min 50Mbps)\n- Dedicated workspace\n- Available during core hours (10am–3pm local)\n\n## Equipment\nCompany provides: laptop, monitor allowance ($300/yr)',created:now,updated:now,status:'published',author:'System'},
+  ]);
+}
+
+function load(){
+  seedDocs();
+  allDocs=readDocs();
+  updateCounts(); renderDocs();
+}
+
+function updateCounts(){
+  const types=['wiki','sop','policy','report'];
+  document.getElementById('cnt-all').textContent=allDocs.length;
+  types.forEach(t=>{ const el=document.getElementById('cnt-'+t); if(el) el.textContent=allDocs.filter(d=>d.type===t).length; });
+  document.getElementById('qc-wiki').textContent=allDocs.filter(d=>d.type==='wiki').length+' pages';
+  document.getElementById('qc-sop').textContent=allDocs.filter(d=>d.type==='sop').length+' procedures';
+  document.getElementById('qc-policy').textContent=allDocs.filter(d=>d.type==='policy').length+' documents';
+}
+
+function showSpace(space, btn){
+  currentSpace=space;
+  if(btn){ document.querySelectorAll('.hub-link').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+  const TITLES={all:'All Documents',wiki:'Company Wiki',sop:'SOPs & Procedures',policy:'Policies',report:'Reports',it:'IT & DevOps',finance:'Finance',hr:'HR & Talent',marketing:'Marketing',sales:'Sales'};
+  const SUBS={all:'Everything in the company knowledge base',wiki:'Internal encyclopedia and guides',sop:'Standard operating procedures',policy:'Company policies and rules',report:'Reports and analytics',it:'IT documentation',finance:'Financial guidelines',hr:'People & culture docs',marketing:'Brand and campaign docs',sales:'Sales playbooks'};
+  document.getElementById('space-title').textContent=TITLES[space]||space;
+  document.getElementById('space-sub').textContent=SUBS[space]||'';
+  document.getElementById('doc-cards').style.display=space==='all'?'grid':'none';
+  renderDocs();
+}
+
+function filterDocs(docs){
+  if(currentSpace==='all') return docs;
+  if(['wiki','sop','policy','report'].includes(currentSpace)) return docs.filter(d=>d.type===currentSpace);
+  return docs.filter(d=>d.dept===currentSpace);
+}
+
+function searchDocs(q){
+  renderDocs(q.toLowerCase());
+}
+
+function renderDocs(q=''){
+  let items=filterDocs(allDocs);
+  if(q) items=items.filter(d=>(d.title+d.tags.join(' ')+d.body).toLowerCase().includes(q));
+  document.getElementById('doc-count').textContent=items.length+' document'+(items.length!==1?'s':'');
+  const el=document.getElementById('doc-rows');
+  if(!items.length){ el.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted);font-size:0.78rem">No documents yet. <button onclick="openDocModal()" style="background:none;border:none;color:var(--indigo2);cursor:pointer;font-size:0.78rem">Create one →</button></div>'; return; }
+  function ta(iso){const s=Math.floor((Date.now()-new Date(iso))/1000);if(s<60)return 'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
+  el.innerHTML=items.map(d=>`
+    <div class="doc-row" onclick="openEditor('${d.id}')">
+      <div class="doc-row-icon">${TYPE_ICON[d.type]||'📄'}</div>
+      <div class="doc-row-info">
+        <div class="doc-row-title">${d.title}</div>
+        <div class="doc-row-meta">${d.dept||'General'} · Updated ${ta(d.updated)} · ${d.tags.slice(0,3).join(', ')}</div>
+      </div>
+      <div class="doc-row-actions">
+        <span class="badge" style="background:${TYPE_COLOR[d.type]||'#5a6480'}18;color:${TYPE_COLOR[d.type]||'#5a6480'};border-color:${TYPE_COLOR[d.type]||'#5a6480'}33">${d.type}</span>
+        <button onclick="event.stopPropagation();deleteDoc('${d.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:3px 5px;border-radius:4px;font-size:0.8rem" title="Delete">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function openEditor(id){
+  const doc=allDocs.find(d=>d.id===id); if(!doc) return;
+  editingId=id;
+  document.getElementById('editor-title').textContent=doc.title;
+  document.getElementById('editor-body').value=doc.body||'';
+  document.getElementById('wiki-editor').style.display='block';
+  document.getElementById('editor-body').focus();
+  document.getElementById('wiki-editor').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function closeEditor(){ document.getElementById('wiki-editor').style.display='none'; editingId=null; }
+
+function saveDoc(){
+  if(!editingId) return;
+  const docs=readDocs();
+  const idx=docs.findIndex(d=>d.id===editingId); if(idx<0) return;
+  docs[idx].body=document.getElementById('editor-body').value;
+  docs[idx].updated=new Date().toISOString();
+  writeDocs(docs); allDocs=docs;
+  closeEditor();
+}
+
+function insertMd(pre,post){
+  const ta=document.getElementById('editor-body');
+  const s=ta.selectionStart, e=ta.selectionEnd;
+  const sel=ta.value.slice(s,e);
+  ta.value=ta.value.slice(0,s)+pre+sel+post+ta.value.slice(e);
+  ta.selectionStart=s+pre.length; ta.selectionEnd=s+pre.length+sel.length;
+  ta.focus();
+}
+
+function deleteDoc(id){
+  if(!confirm('Delete this document?')) return;
+  const docs=readDocs().filter(d=>d.id!==id);
+  writeDocs(docs); allDocs=docs; updateCounts(); renderDocs();
+}
+
+function filterNav(q){ /* filter hub-links */ }
+
+function openDocModal(type=''){
+  if(type) document.getElementById('doc-type').value=type;
+  document.getElementById('doc-modal').classList.add('open');
+}
+function closeM(id){ document.getElementById(id).classList.remove('open'); }
+function closeMOuter(id,e){ if(e.target===document.getElementById(id)) closeM(id); }
+
+function createDoc(){
+  const title=document.getElementById('doc-title').value.trim(); if(!title) return;
+  const doc={
+    id:'d'+Date.now(), title,
+    type:document.getElementById('doc-type').value,
+    dept:document.getElementById('doc-dept').value,
+    tags:document.getElementById('doc-tags').value.split(',').map(s=>s.trim()).filter(Boolean),
+    body:document.getElementById('doc-body').value,
+    created:new Date().toISOString(), updated:new Date().toISOString(),
+    status:'published', author:'You',
+  };
+  const docs=readDocs(); docs.unshift(doc); writeDocs(docs); allDocs=docs;
+  closeM('doc-modal');
+  ['doc-title','doc-tags','doc-body'].forEach(id=>document.getElementById(id).value='');
+  updateCounts(); renderDocs();
+  // Open editor for the new doc
+  openEditor(doc.id);
+}
+
+load();
+</script>
+</body>
+</html>

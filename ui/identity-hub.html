@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>AI-BOS · Identity Hub</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#07080f;--surface:#0e1018;--surface2:#13161f;--border:#1c2035;--border2:#252a40;--text:#e8edf5;--muted:#5a6480;--muted2:#8892aa;--indigo:#6366f1;--indigo2:#818cf8;--indigo-dim:rgba(99,102,241,0.12);--green:#34d399;--amber:#f59e0b;--red:#f87171;--purple:#a78bfa;}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(99,102,241,0.09) 0%,transparent 70%);pointer-events:none}
+    #app{position:relative;z-index:1}
+
+    nav{height:54px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 20px}
+    .back{text-decoration:none;color:var(--muted2);font-size:0.82rem;display:flex;align-items:center;gap:5px;transition:color .15s}
+    .back:hover{color:var(--text)}
+    .nav-badge{padding:4px 10px;background:var(--indigo-dim);border:1px solid rgba(99,102,241,0.3);color:var(--indigo2);border-radius:20px;font-size:0.78rem;font-weight:600}
+    .nav-sub{font-size:0.78rem;color:var(--muted)}
+    .nav-spacer{flex:1}
+    .nav-btn{padding:6px 14px;border-radius:7px;font-size:0.78rem;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+    .btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+    .btn-ghost:hover{border-color:var(--border2)}
+    .btn-primary{background:var(--indigo);color:#fff}
+    .btn-primary:hover{filter:brightness(1.1)}
+
+    main{max-width:1400px;margin:0 auto;padding:24px}
+    .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+    .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;overflow:hidden}
+    .kpi-accent{position:absolute;top:0;left:0;right:0;height:2px}
+    .kpi-label{font-size:0.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px}
+    .kpi-value{font-size:1.8rem;font-weight:700;letter-spacing:-.03em}
+    .kpi-sub{font-size:0.7rem;color:var(--muted);margin-top:5px}
+
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+    .card.wide{grid-column:span 2}
+    .card-header{padding:14px 18px 11px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .card-title{font-size:0.84rem;font-weight:600;display:flex;align-items:center;gap:7px}
+    .card-body{padding:0}
+
+    /* tabs */
+    .tabs{display:flex;gap:0;border-bottom:1px solid var(--border)}
+    .tab{padding:10px 18px;font-size:0.8rem;color:var(--muted2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none}
+    .tab:hover{color:var(--text)}
+    .tab.active{color:var(--indigo2);border-bottom-color:var(--indigo)}
+
+    /* identity list */
+    .id-list{max-height:320px;overflow-y:auto}
+    .id-row{display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid var(--border);transition:background .1s}
+    .id-row:last-child{border-bottom:none}
+    .id-row:hover{background:var(--surface2)}
+    .id-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:700;flex-shrink:0}
+    .id-info{flex:1;min-width:0}
+    .id-name{font-size:0.82rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .id-meta{font-size:0.7rem;color:var(--muted);margin-top:1px}
+    .id-actions{display:flex;align-items:center;gap:8px}
+    .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.68rem;font-weight:500;border:1px solid}
+    .status-select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:0.72rem;color:var(--text);font-family:inherit;cursor:pointer;outline:none}
+    .del-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:3px 5px;border-radius:4px;transition:color .15s;font-size:0.85rem}
+    .del-btn:hover{color:var(--red)}
+
+    /* policy list */
+    .policy-row{display:flex;align-items:flex-start;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border)}
+    .policy-row:last-child{border-bottom:none}
+    .policy-icon{font-size:1.1rem;margin-top:1px}
+    .policy-title{font-size:0.82rem;font-weight:500}
+    .policy-desc{font-size:0.72rem;color:var(--muted);margin-top:2px}
+    .toggle{width:36px;height:20px;background:var(--border);border-radius:10px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;margin-left:auto}
+    .toggle.on{background:var(--indigo)}
+    .toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left .2s}
+    .toggle.on::after{left:18px}
+
+    /* session log */
+    .sess-row{display:flex;align-items:center;gap:10px;padding:9px 18px;border-bottom:1px solid var(--border);font-size:0.78rem}
+    .sess-row:last-child{border-bottom:none}
+    .sess-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+    .sess-user{font-weight:500;min-width:120px}
+    .sess-action{flex:1;color:var(--muted2)}
+    .sess-time{color:var(--muted);font-size:0.7rem;white-space:nowrap}
+
+    /* group tags */
+    .group-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:0.72rem;margin:3px}
+    .group-chip span{font-size:0.65rem;background:var(--indigo-dim);color:var(--indigo2);padding:1px 5px;border-radius:8px}
+
+    /* modal */
+    .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+    .modal-bg.open{display:flex}
+    .modal-box{background:var(--surface);border:1px solid var(--border2);border-radius:13px;width:520px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 30px 70px rgba(0,0,0,0.65)}
+    .modal-hd{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+    .modal-hd-title{font-size:0.9rem;font-weight:600}
+    .modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem}
+    .modal-bd{flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+    .modal-ft{padding:13px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+    .field label{font-size:0.74rem;color:var(--muted);display:block;margin-bottom:4px}
+    .field input,.field select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:0.82rem;color:var(--text);outline:none;font-family:inherit;transition:border-color .2s}
+    .field input:focus,.field select:focus{border-color:var(--indigo)}
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .live-dot{display:inline-block;width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+  </style>
+</head>
+<body>
+<div id="app">
+  <nav>
+    <a href="/dashboard" class="back">← AI-BOS</a>
+    <div class="nav-badge">🔐 Identity Hub</div>
+    <span class="nav-sub">Users · Agents · Access · Policies</span>
+    <div class="nav-spacer"></div>
+    <button class="nav-btn btn-ghost" onclick="openAddModal()">+ Add Identity</button>
+  </nav>
+
+  <main>
+    <div class="kpi-row" id="kpi-row">
+      <div class="kpi-card"><div class="kpi-accent" style="background:#6366f1"></div><div class="kpi-label">Total Identities</div><div class="kpi-value" id="k-total">–</div><div class="kpi-sub">users + agents</div></div>
+      <div class="kpi-card"><div class="kpi-accent" style="background:#34d399"></div><div class="kpi-label">Active Sessions</div><div class="kpi-value" id="k-sessions">–</div><div class="kpi-sub"><span class="live-dot"></span> live now</div></div>
+      <div class="kpi-card"><div class="kpi-accent" style="background:#f59e0b"></div><div class="kpi-label">AI Agents</div><div class="kpi-value" id="k-agents">–</div><div class="kpi-sub">registered agents</div></div>
+      <div class="kpi-card"><div class="kpi-accent" style="background:#f87171"></div><div class="kpi-label">Security Alerts</div><div class="kpi-value" id="k-alerts">0</div><div class="kpi-sub">last 24h</div></div>
+    </div>
+
+    <div class="grid">
+      <!-- Identity Directory -->
+      <div class="card wide">
+        <div class="card-header">
+          <div class="card-title">👤 Master Identity Directory</div>
+          <div style="display:flex;gap:6px">
+            <input id="search-id" placeholder="Search…" oninput="filterIds(this.value)" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:0.78rem;color:var(--text);outline:none;font-family:inherit;width:180px">
+          </div>
+        </div>
+        <div class="tabs">
+          <div class="tab active" onclick="switchTab('all',this)">All</div>
+          <div class="tab" onclick="switchTab('user',this)">Users</div>
+          <div class="tab" onclick="switchTab('agent',this)">AI Agents</div>
+          <div class="tab" onclick="switchTab('service',this)">Service Accounts</div>
+        </div>
+        <div class="id-list" id="id-list">
+          <div style="padding:24px;text-align:center;color:var(--muted);font-size:0.78rem">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Groups & Teams -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">👥 Groups & Teams</div>
+          <button class="nav-btn btn-ghost" style="font-size:0.72rem;padding:4px 10px" onclick="openGroupModal()">+ Group</button>
+        </div>
+        <div class="card-body" id="groups-body" style="padding:14px 18px">
+          <div style="color:var(--muted);font-size:0.78rem;text-align:center;padding:16px 0">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Security Policies -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🛡 Security Policies</div>
+        </div>
+        <div id="policies-body">
+          <div class="policy-row"><span class="policy-icon">🔒</span><div><div class="policy-title">Require 2FA</div><div class="policy-desc">All users must use two-factor auth</div></div><div class="toggle on" onclick="togglePolicy(this)"></div></div>
+          <div class="policy-row"><span class="policy-icon">⏰</span><div><div class="policy-title">Session Timeout</div><div class="policy-desc">Auto-logout after 8h inactivity</div></div><div class="toggle on" onclick="togglePolicy(this)"></div></div>
+          <div class="policy-row"><span class="policy-icon">🌍</span><div><div class="policy-title">IP Allowlist</div><div class="policy-desc">Restrict access by IP range</div></div><div class="toggle" onclick="togglePolicy(this)"></div></div>
+          <div class="policy-row"><span class="policy-icon">🤖</span><div><div class="policy-title">Agent Sandboxing</div><div class="policy-desc">Limit agent permissions by scope</div></div><div class="toggle on" onclick="togglePolicy(this)"></div></div>
+          <div class="policy-row"><span class="policy-icon">📋</span><div><div class="policy-title">Audit Logging</div><div class="policy-desc">Log all identity actions</div></div><div class="toggle on" onclick="togglePolicy(this)"></div></div>
+        </div>
+      </div>
+
+      <!-- Session Log -->
+      <div class="card wide">
+        <div class="card-header">
+          <div class="card-title">📋 Audit Log <span class="live-dot"></span></div>
+          <button class="nav-btn btn-ghost" style="font-size:0.72rem;padding:4px 10px" onclick="loadLog()">↺ Refresh</button>
+        </div>
+        <div id="sess-log" style="max-height:260px;overflow-y:auto">
+          <div style="padding:20px;text-align:center;color:var(--muted);font-size:0.78rem">Loading…</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ADD IDENTITY MODAL -->
+<div id="add-modal" class="modal-bg" onclick="closeMOuter('add-modal',event)">
+  <div class="modal-box">
+    <div class="modal-hd"><span class="modal-hd-title">Add Identity</span><button class="modal-close" onclick="closeM('add-modal')">✕</button></div>
+    <div class="modal-bd">
+      <div class="field-row">
+        <div class="field"><label>Display Name</label><input id="id-name" placeholder="Jane Smith or deploy-bot"></div>
+        <div class="field"><label>Email / ID</label><input id="id-email" placeholder="jane@company.com"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Type</label>
+          <select id="id-type">
+            <option value="user">User</option>
+            <option value="agent">AI Agent</option>
+            <option value="service">Service Account</option>
+          </select>
+        </div>
+        <div class="field"><label>Role</label>
+          <select id="id-role">
+            <option value="viewer">Viewer</option>
+            <option value="editor">Editor</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Department</label>
+        <select id="id-dept">
+          <option value="">None</option>
+          <option value="engineering">Engineering</option>
+          <option value="it">IT & DevOps</option>
+          <option value="finance">Finance</option>
+          <option value="hr">HR</option>
+          <option value="marketing">Marketing</option>
+          <option value="sales">Sales</option>
+          <option value="operations">Operations</option>
+        </select>
+      </div>
+      <div class="field"><label>Permissions (comma separated)</label><input id="id-perms" placeholder="read:all, write:finance, admin:it"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="nav-btn btn-ghost" onclick="closeM('add-modal')">Cancel</button>
+      <button class="nav-btn btn-primary" onclick="addIdentity()">Add Identity</button>
+    </div>
+  </div>
+</div>
+
+<!-- GROUP MODAL -->
+<div id="group-modal" class="modal-bg" onclick="closeMOuter('group-modal',event)">
+  <div class="modal-box">
+    <div class="modal-hd"><span class="modal-hd-title">Create Group</span><button class="modal-close" onclick="closeM('group-modal')">✕</button></div>
+    <div class="modal-bd">
+      <div class="field"><label>Group Name</label><input id="g-name" placeholder="e.g. Engineering Team"></div>
+      <div class="field"><label>Description</label><input id="g-desc" placeholder="What is this group for?"></div>
+      <div class="field"><label>Type</label>
+        <select id="g-type"><option value="team">Team</option><option value="dept">Department</option><option value="security">Security Group</option></select>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="nav-btn btn-ghost" onclick="closeM('group-modal')">Cancel</button>
+      <button class="nav-btn btn-primary" onclick="addGroup()">Create Group</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOKEN = localStorage.getItem('aibos_token');
+if (!TOKEN) location.href = '/login';
+const WS = localStorage.getItem('aibos_workspace') || 'default';
+async function api(url,opts={}){ return fetch(url,{headers:{Authorization:`Bearer ${TOKEN}`,'x-workspace':WS,'Content-Type':'application/json',...(opts.headers||{})}, ...opts}); }
+
+const TYPE_COLOR = { user:'#6366f1', agent:'#f59e0b', service:'#378ADD' };
+const STATUS_COLOR = { active:'#34d399', inactive:'#5a6480', suspended:'#f87171' };
+
+let allIds=[], idFilter='all', searchQ='';
+
+async function load(){
+  try {
+    const [iamR, empR, regR] = await Promise.all([
+      api('/api/it/registry'),
+      api('/api/hr/employees'),
+      api('/api/auth/users').catch(()=>({ok:false})),
+    ]);
+    const iam = iamR.ok ? await iamR.json() : [];
+    const emps = empR.ok ? await empR.json() : [];
+    const users = regR.ok ? await regR.json() : [];
+
+    // Build unified identity list
+    allIds = [
+      ...emps.map(e=>({ id:'emp-'+e.id, name:e.name, email:e.email||'', type:'user', dept:e.department, role:e.role, status:e.status, avatar:e.name[0] })),
+      ...iam.map(a=>({ id:'iam-'+a.id, name:a.name, email:'', type:a.name.includes('bot')||a.name.includes('agent')||a.name.includes('Bot')?'agent':'service', dept:'', role:a.role, status:a.status, perms:a.permissions, avatar:a.name[0] })),
+    ];
+
+    const agents = allIds.filter(i=>i.type==='agent').length;
+    document.getElementById('k-total').textContent = allIds.length;
+    document.getElementById('k-agents').textContent = agents;
+    document.getElementById('k-sessions').textContent = allIds.filter(i=>i.status==='active').length;
+
+    renderIds(); renderGroups(); loadLog();
+  } catch(e){ console.error(e); }
+}
+
+function filterIds(q){ searchQ=q.toLowerCase(); renderIds(); }
+function switchTab(type, btn){
+  idFilter=type;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); renderIds();
+}
+
+function renderIds(){
+  let items = idFilter==='all' ? allIds : allIds.filter(i=>i.type===idFilter);
+  if(searchQ) items=items.filter(i=>(i.name+i.email+i.dept+i.role).toLowerCase().includes(searchQ));
+  const el=document.getElementById('id-list');
+  if(!items.length){ el.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted);font-size:0.78rem">No identities found</div>'; return; }
+  el.innerHTML=items.map(i=>`
+    <div class="id-row">
+      <div class="id-avatar" style="background:${TYPE_COLOR[i.type]||'#5a6480'}22;color:${TYPE_COLOR[i.type]||'#5a6480'};border:1px solid ${TYPE_COLOR[i.type]||'#5a6480'}33">${i.avatar||'?'}</div>
+      <div class="id-info">
+        <div class="id-name">${i.name}</div>
+        <div class="id-meta">${i.type}${i.dept?' · '+i.dept:''}${i.role?' · '+i.role:''}</div>
+      </div>
+      <div class="id-actions">
+        <span class="badge" style="background:${STATUS_COLOR[i.status]||'#5a6480'}18;color:${STATUS_COLOR[i.status]||'#5a6480'};border-color:${STATUS_COLOR[i.status]||'#5a6480'}33">${i.status||'active'}</span>
+        <span class="badge" style="background:${TYPE_COLOR[i.type]}18;color:${TYPE_COLOR[i.type]};border-color:${TYPE_COLOR[i.type]}33">${i.type}</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderGroups(){
+  const GROUPS=[
+    {name:'Engineering',type:'team',count:allIds.filter(i=>i.dept==='engineering').length,color:'#60a5fa'},
+    {name:'IT & DevOps',type:'team',count:allIds.filter(i=>i.dept==='it').length,color:'#378ADD'},
+    {name:'Finance',type:'dept',count:allIds.filter(i=>i.dept==='finance').length,color:'#34d399'},
+    {name:'HR',type:'dept',count:allIds.filter(i=>i.dept==='hr').length,color:'#a78bfa'},
+    {name:'Marketing',type:'dept',count:allIds.filter(i=>i.dept==='marketing').length,color:'#f59e0b'},
+    {name:'AI Agents',type:'security',count:allIds.filter(i=>i.type==='agent').length,color:'#fb923c'},
+  ];
+  const el=document.getElementById('groups-body');
+  el.innerHTML=GROUPS.map(g=>`
+    <div class="group-chip" style="border-color:${g.color}33">
+      <span style="color:${g.color};font-size:0.72rem">${g.name}</span>
+      <span>${g.count}</span>
+    </div>`).join('')+`
+    <div style="margin-top:12px;font-size:0.72rem;color:var(--muted)">
+      ${allIds.filter(i=>i.type==='agent').length} AI agents &nbsp;·&nbsp; ${allIds.filter(i=>i.type==='service').length} service accounts &nbsp;·&nbsp; ${allIds.filter(i=>i.type==='user').length} users
+    </div>`;
+}
+
+async function loadLog(){
+  // Build log from existing data (no dedicated log API yet — synthesize from activity)
+  try {
+    const r=await api('/api/activity');
+    const items=r.ok?await r.json():[];
+    const el=document.getElementById('sess-log');
+    if(!items.length){ el.innerHTML='<div style="padding:16px;text-align:center;color:var(--muted);font-size:0.78rem">No audit events</div>'; return; }
+    const DC={it:'#378ADD',finance:'#34d399',hr:'#a78bfa',marketing:'#f59e0b',sales:'#fb923c'};
+    function ta(iso){const s=Math.floor((Date.now()-new Date(iso))/1000);if(s<60)return s+'s ago';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
+    el.innerHTML=items.slice(0,20).map(i=>`
+      <div class="sess-row">
+        <div class="sess-dot" style="background:${DC[i.dept]||'#5a6480'}"></div>
+        <div class="sess-user">${i.dept||'system'}</div>
+        <div class="sess-action">${i.text}</div>
+        <div class="sess-time">${ta(i.date)}</div>
+      </div>`).join('');
+  }catch{}
+}
+
+function togglePolicy(el){ el.classList.toggle('on'); }
+
+function openAddModal(){ document.getElementById('add-modal').classList.add('open'); }
+function openGroupModal(){ document.getElementById('group-modal').classList.add('open'); }
+function closeM(id){ document.getElementById(id).classList.remove('open'); }
+function closeMOuter(id,e){ if(e.target===document.getElementById(id)) closeM(id); }
+
+async function addIdentity(){
+  const name=document.getElementById('id-name').value.trim();
+  const type=document.getElementById('id-type').value;
+  if(!name) return;
+  // Store in IAM registry
+  const perms=document.getElementById('id-perms').value.split(',').map(s=>s.trim()).filter(Boolean);
+  await api('/api/it/registry',{method:'POST',body:JSON.stringify({name,role:document.getElementById('id-role').value,permissions:perms})});
+  closeM('add-modal'); load();
+}
+
+async function addGroup(){
+  const name=document.getElementById('g-name').value.trim(); if(!name) return;
+  closeM('group-modal');
+  alert(`Group "${name}" created.`);
+}
+
+load(); setInterval(loadLog, 30000);
+</script>
+</body>
+</html>

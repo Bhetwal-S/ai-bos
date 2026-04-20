@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI-BOS · Legal</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg: #07080f; --surface: #0e1018; --border: #1c2035; --text: #e8edf5; --muted: #5a6480; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    body::before { content:''; position:fixed; inset:0; z-index:0; background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(148,163,184,0.08) 0%, transparent 70%); pointer-events:none; }
+  </style>
+  <link rel="stylesheet" href="/departments/dept.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="app">
+  <nav class="dept-nav">
+    <div class="dept-nav-left">
+      <a href="/dashboard" class="back-btn">← AI-BOS</a>
+      <div class="dept-badge" style="background:rgba(148,163,184,0.15);border-color:rgba(148,163,184,0.4);color:#94a3b8">
+        ⚖️ Legal
+      </div>
+      <span class="dept-subtitle">Contracts · Compliance · Risk</span>
+    </div>
+    <div class="dept-nav-right">
+      <a href="/war-room" class="war-room-btn">💬 War Room</a>
+      <div class="dept-links">
+        <a href="/department/it">☁️ IT</a>
+        <a href="/department/finance">💰 Finance</a>
+        <a href="/department/hr">👥 HR</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="dept-main">
+    <div class="kpi-row" id="kpi-row"></div>
+
+    <div class="dept-grid">
+      <!-- Contracts -->
+      <div class="dept-card" style="grid-column: span 2">
+        <div class="card-header">
+          <div class="card-title">📄 Contracts</div>
+          <div style="display:flex;gap:8px">
+            <button class="filter-btn active" onclick="filterContracts('all',this)">All</button>
+            <button class="filter-btn" onclick="filterContracts('active',this)">Active</button>
+            <button class="filter-btn" onclick="filterContracts('pending',this)">Pending</button>
+            <button class="filter-btn" onclick="filterContracts('expired',this)">Expired</button>
+            <button class="add-btn" onclick="openContractModal()">+ New Contract</button>
+          </div>
+        </div>
+        <div id="contract-list" class="data-list"></div>
+      </div>
+
+      <!-- Charts -->
+      <div class="dept-card" style="grid-column: span 2">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+          <div>
+            <div class="card-title" style="margin-bottom:14px">📄 Contracts by Status</div>
+            <canvas id="chart-contracts" height="180"></canvas>
+          </div>
+          <div>
+            <div class="card-title" style="margin-bottom:14px">⚠️ Risk by Category</div>
+            <canvas id="chart-risks" height="180"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk Register -->
+      <div class="dept-card" style="grid-column: span 2">
+        <div class="card-header">
+          <div class="card-title">⚠️ Risk Register</div>
+          <button class="add-btn" onclick="openRiskModal()">+ Add Risk</button>
+        </div>
+        <div id="risk-list" class="data-list"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Contract Modal -->
+<div id="contract-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-header"><span>New Contract</span><button onclick="closeModal('contract-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field-row">
+        <div class="field"><label>Contract Name</label><input id="c-name" placeholder="Service Agreement 2026"></div>
+        <div class="field"><label>Counterparty</label><input id="c-party" placeholder="Acme Corp"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Type</label>
+          <select id="c-type">
+            <option value="NDA">NDA</option>
+            <option value="MSA">MSA</option>
+            <option value="SOW">SOW</option>
+            <option value="Employment">Employment</option>
+            <option value="Vendor">Vendor</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="field"><label>Value ($)</label><input id="c-value" type="number" placeholder="50000"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Start Date</label><input id="c-start" type="date"></div>
+        <div class="field"><label>End Date</label><input id="c-end" type="date"></div>
+      </div>
+      <div class="field"><label>Status</label>
+        <select id="c-status">
+          <option value="active">Active</option>
+          <option value="pending">Pending</option>
+          <option value="expired">Expired</option>
+          <option value="terminated">Terminated</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('contract-modal')">Cancel</button>
+      <button class="btn-primary" onclick="createContract()">Save Contract</button>
+    </div>
+  </div>
+</div>
+
+<!-- Risk Modal -->
+<div id="risk-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-header"><span>Add Risk</span><button onclick="closeModal('risk-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Title</label><input id="r-title" placeholder="GDPR non-compliance exposure"></div>
+      <div class="field-row">
+        <div class="field"><label>Category</label>
+          <select id="r-category">
+            <option value="Legal">Legal</option>
+            <option value="Regulatory">Regulatory</option>
+            <option value="Financial">Financial</option>
+            <option value="Operational">Operational</option>
+            <option value="Reputational">Reputational</option>
+          </select>
+        </div>
+        <div class="field"><label>Severity</label>
+          <select id="r-severity">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Description</label><textarea id="r-desc" rows="3" placeholder="Describe the risk and potential impact…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('risk-modal')">Cancel</button>
+      <button class="btn-primary" onclick="createRisk()">Add Risk</button>
+    </div>
+  </div>
+</div>
+
+<script src="/departments/dept.js"></script>
+<script>
+if (!localStorage.getItem('aibos_token')) window.location.href = '/login';
+
+const CONTRACT_STATUS_COLOR = { active:'#34d399', pending:'#f59e0b', expired:'#5a6480', terminated:'#f87171' };
+const RISK_SEVERITY_COLOR   = { low:'#34d399', medium:'#f59e0b', high:'#f87171', critical:'#dc2626' };
+
+let allContracts = [], allRisks = [], contractFilter = 'all';
+let chartContracts = null, chartRisks = null;
+
+async function load() {
+  const [cRes, rRes] = await Promise.all([
+    apiFetch('/api/legal/contracts'),
+    apiFetch('/api/legal/risks'),
+  ]);
+  allContracts = await cRes.json();
+  allRisks     = await rRes.json();
+  renderKPIs();
+  renderContracts();
+  renderRisks();
+  renderCharts();
+}
+
+function renderKPIs() {
+  const active  = allContracts.filter(c => c.status === 'active').length;
+  const pending = allContracts.filter(c => c.status === 'pending').length;
+  const highCritical = allRisks.filter(r => r.severity === 'high' || r.severity === 'critical').length;
+  const compliance = Math.max(0, 100 - highCritical * 10);
+  document.getElementById('kpi-row').innerHTML = [
+    { label:'Active Contracts',  value: active,       color:'#34d399' },
+    { label:'Pending Reviews',   value: pending,      color:'#f59e0b' },
+    { label:'Compliance Score',  value: compliance+'%', color:'#94a3b8' },
+    { label:'Risk Items',        value: allRisks.length, color:'#f87171' },
+  ].map(k => `<div class="kpi-card"><div class="kpi-val" style="color:${k.color}">${k.value}</div><div class="kpi-label">${k.label}</div></div>`).join('');
+}
+
+function filterContracts(status, btn) {
+  contractFilter = status;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderContracts();
+}
+
+function renderContracts() {
+  const items = contractFilter === 'all' ? allContracts : allContracts.filter(c => c.status === contractFilter);
+  document.getElementById('contract-list').innerHTML = items.length ? items.map(c => {
+    const sc = CONTRACT_STATUS_COLOR[c.status] || '#5a6480';
+    const val = c.value ? '$' + Number(c.value).toLocaleString() : '';
+    return `
+    <div class="list-row">
+      <div class="list-main">
+        <div>
+          <div class="list-title">${c.name} <span style="color:var(--muted);font-size:11px;font-weight:400">${c.type || ''}</span></div>
+          <div class="list-sub">${c.counterparty || ''}${val ? ' · ' + val : ''}${c.startDate ? ' · ' + c.startDate : ''}${c.endDate ? ' → ' + c.endDate : ''}</div>
+        </div>
+      </div>
+      <div class="list-actions">
+        <span class="badge" style="background:${sc}22;color:${sc}">${c.status}</span>
+        <button class="del-btn" onclick="deleteContract('${c.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty-state">No contracts found</div>';
+}
+
+function renderRisks() {
+  document.getElementById('risk-list').innerHTML = allRisks.length ? allRisks.map(r => {
+    const sc = RISK_SEVERITY_COLOR[r.severity] || '#5a6480';
+    return `
+    <div class="list-row">
+      <div class="list-main">
+        <div>
+          <div class="list-title">${r.title}</div>
+          <div class="list-sub">${r.category || ''}${r.description ? ' · ' + r.description : ''}</div>
+        </div>
+      </div>
+      <div class="list-actions">
+        <span class="badge" style="background:${sc}22;color:${sc}">${r.severity}</span>
+        <button class="del-btn" onclick="deleteRisk('${r.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty-state">No risks recorded</div>';
+}
+
+function renderCharts() {
+  const statusCounts = {};
+  allContracts.forEach(c => { statusCounts[c.status] = (statusCounts[c.status] || 0) + 1; });
+  const statusLabels = Object.keys(statusCounts);
+  const statusColors = statusLabels.map(s => CONTRACT_STATUS_COLOR[s] || '#5a6480');
+
+  if (chartContracts) { chartContracts.destroy(); chartContracts = null; }
+  chartContracts = new Chart(document.getElementById('chart-contracts'), {
+    type: 'doughnut',
+    data: {
+      labels: statusLabels,
+      datasets: [{ data: statusLabels.map(s => statusCounts[s]), backgroundColor: statusColors.map(c => c + '55'), borderColor: statusColors, borderWidth: 2 }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#5a6480', font: { size: 11 } } } } },
+  });
+
+  const catCounts = {};
+  allRisks.forEach(r => { catCounts[r.category] = (catCounts[r.category] || 0) + 1; });
+  const catLabels = Object.keys(catCounts);
+  const CAT_COLORS = ['#94a3b8','#f87171','#f59e0b','#34d399','#60a5fa'];
+
+  if (chartRisks) { chartRisks.destroy(); chartRisks = null; }
+  chartRisks = new Chart(document.getElementById('chart-risks'), {
+    type: 'bar',
+    data: {
+      labels: catLabels,
+      datasets: [{ data: catLabels.map(k => catCounts[k]), backgroundColor: CAT_COLORS.map(c => c + '44'), borderColor: CAT_COLORS, borderWidth: 2, borderRadius: 6 }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#1c2035' }, ticks: { color: '#5a6480', font: { size: 10 } } }, y: { grid: { color: '#1c2035' }, ticks: { color: '#5a6480', font: { size: 10 }, stepSize: 1 } } } },
+  });
+}
+
+async function createContract() {
+  const body = {
+    name:         v('c-name'),
+    counterparty: v('c-party'),
+    type:         v('c-type'),
+    value:        v('c-value'),
+    startDate:    v('c-start'),
+    endDate:      v('c-end'),
+    status:       v('c-status'),
+  };
+  if (!body.name || !body.counterparty) return;
+  await apiFetch('/api/legal/contracts', { method: 'POST', body: JSON.stringify(body) });
+  closeModal('contract-modal');
+  load();
+}
+
+async function deleteContract(id) {
+  await apiFetch(`/api/legal/contracts/${id}`, { method: 'DELETE' });
+  load();
+}
+
+async function createRisk() {
+  const body = {
+    title:       v('r-title'),
+    category:    v('r-category'),
+    severity:    v('r-severity'),
+    description: v('r-desc'),
+  };
+  if (!body.title) return;
+  await apiFetch('/api/legal/risks', { method: 'POST', body: JSON.stringify(body) });
+  closeModal('risk-modal');
+  load();
+}
+
+async function deleteRisk(id) {
+  await apiFetch(`/api/legal/risks/${id}`, { method: 'DELETE' });
+  load();
+}
+
+function openContractModal() { document.getElementById('contract-modal').style.display = 'flex'; }
+function openRiskModal()     { document.getElementById('risk-modal').style.display = 'flex'; }
+
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI-BOS · Sign In</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #06070b;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(99,102,241,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .card {
+      position: relative; z-index: 1;
+      background: #111318;
+      border: 1px solid #1e2130;
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%; max-width: 400px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+    }
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 28px;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+    }
+    .logo-text { font-size: 1.1rem; font-weight: 700; }
+    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 6px; }
+    .subtitle { font-size: 0.85rem; color: #5a6480; margin-bottom: 28px; }
+
+    .tab-row {
+      display: flex; gap: 0;
+      background: #0a0b0f;
+      border-radius: 8px; padding: 3px;
+      margin-bottom: 24px;
+    }
+    .tab {
+      flex: 1; padding: 8px;
+      background: none; border: none;
+      border-radius: 6px;
+      font-size: 0.83rem; font-weight: 500;
+      color: #5a6480; cursor: pointer;
+      transition: all .2s;
+    }
+    .tab.active { background: #1e2130; color: #e2e8f0; }
+
+    .field { margin-bottom: 16px; }
+    label { display: block; font-size: 0.75rem; color: #5a6480; margin-bottom: 6px; font-weight: 500; }
+    input {
+      width: 100%;
+      background: #0a0b0f;
+      border: 1px solid #1e2130;
+      border-radius: 8px;
+      padding: 10px 13px;
+      font-size: 0.88rem;
+      color: #e2e8f0;
+      outline: none;
+      transition: border .2s;
+    }
+    input:focus { border-color: #6366f1; }
+    input::placeholder { color: #3a3f55; }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      border: none; border-radius: 9px;
+      color: #fff; font-size: 0.9rem; font-weight: 700;
+      cursor: pointer; margin-top: 6px;
+      transition: opacity .2s, transform .2s;
+    }
+    .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .error {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 8px;
+      padding: 10px 13px;
+      font-size: 0.82rem;
+      color: #f87171;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .back { display: block; text-align: center; margin-top: 20px; font-size: 0.8rem; color: #3a3f55; }
+    .back a { color: #818cf8; text-decoration: none; }
+    .back a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <span class="logo-text">AI-BOS</span>
+  </div>
+
+  <h1 id="form-title">Welcome back</h1>
+  <p class="subtitle" id="form-sub">Sign in to your AI Business OS</p>
+
+  <div class="tab-row">
+    <button class="tab active" onclick="showTab('login')">Sign In</button>
+    <button class="tab" onclick="showTab('register')" id="tab-register">Create Account</button>
+  </div>
+
+  <div class="error" id="error-msg"></div>
+
+  <!-- Login form -->
+  <div id="form-login">
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="you@company.com" autocomplete="email" />
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')submitLogin()" />
+    </div>
+    <button class="btn" onclick="submitLogin()" id="btn-login">Sign In →</button>
+  </div>
+
+  <!-- Register form -->
+  <div id="form-register" style="display:none">
+    <div class="field">
+      <label>Your Name</label>
+      <input type="text" id="reg-name" placeholder="Jane Smith" autocomplete="name" />
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="reg-email" placeholder="you@company.com" autocomplete="email" />
+    </div>
+    <div class="field">
+      <label>Password <span style="color:#3a3f55">(min 8 chars)</span></label>
+      <input type="password" id="reg-password" placeholder="••••••••" autocomplete="new-password"
+        onkeydown="if(event.key==='Enter')submitRegister()" />
+    </div>
+    <button class="btn" onclick="submitRegister()" id="btn-register">Create Account →</button>
+  </div>
+
+  <span class="back"><a href="/">← Back to home</a></span>
+</div>
+
+<script>
+  // If already logged in, redirect to dashboard
+  const token = localStorage.getItem('aibos_token');
+  if (token) window.location.href = '/dashboard';
+
+  // Check for invite token in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const inviteToken = urlParams.get('invite');
+  let inviteData = null;
+
+  async function init() {
+    if (inviteToken) {
+      try {
+        const r = await fetch(`/api/auth/invite/${inviteToken}`);
+        const d = await r.json();
+        if (r.ok) {
+          inviteData = d;
+          showTab('register');
+          document.getElementById('form-title').textContent = "You're invited!";
+          document.getElementById('form-sub').textContent = 'Create your account to join the workspace';
+          if (d.email) document.getElementById('reg-email').value = d.email;
+          document.getElementById('tab-register').style.display = 'none';
+          document.querySelector('.tab').style.display = 'none';
+        } else {
+          showError(d.error || 'Invalid invite link');
+        }
+      } catch {}
+      return;
+    }
+    // Check if this is first-time setup — if no users exist, show register tab
+    const s = await fetch('/api/auth/status').then(r => r.json());
+    if (!s.hasUsers) {
+      showTab('register');
+      document.getElementById('form-title').textContent = 'Set up your account';
+      document.getElementById('form-sub').textContent = 'Create the first admin account to get started';
+    }
+  }
+  init();
+
+  function showTab(tab) {
+    document.getElementById('form-login').style.display    = tab === 'login'    ? 'block' : 'none';
+    document.getElementById('form-register').style.display = tab === 'register' ? 'block' : 'none';
+    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', (i === 0) === (tab === 'login')));
+    document.getElementById('error-msg').style.display = 'none';
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function setLoading(btnId, loading) {
+    const btn = document.getElementById(btnId);
+    btn.disabled = loading;
+    btn.textContent = loading ? 'Please wait…' : (btnId === 'btn-login' ? 'Sign In →' : 'Create Account →');
+  }
+
+  async function submitLogin() {
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    if (!email || !password) return showError('Please fill in all fields');
+    setLoading('btn-login', true);
+    try {
+      const r = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const d = await r.json();
+      if (!r.ok) return showError(d.error || 'Login failed');
+      localStorage.setItem('aibos_token', d.token);
+      localStorage.setItem('aibos_user', JSON.stringify(d.user));
+      window.location.href = '/dashboard';
+    } catch { showError('Connection error — is the server running?'); }
+    finally { setLoading('btn-login', false); }
+  }
+
+  async function submitRegister() {
+    const name     = document.getElementById('reg-name').value.trim();
+    const email    = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    if (!email || !password) return showError('Please fill in all fields');
+    setLoading('btn-register', true);
+    try {
+      const r = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name, inviteToken: inviteToken || undefined }),
+      });
+      const d = await r.json();
+      if (!r.ok) return showError(d.error || 'Registration failed');
+      localStorage.setItem('aibos_token', d.token);
+      localStorage.setItem('aibos_user', JSON.stringify(d.user));
+      window.location.href = '/dashboard';
+    } catch { showError('Connection error — is the server running?'); }
+    finally { setLoading('btn-register', false); }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI-BOS · Sales & CRM</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg: #06070b; --surface: #111318; --border: #1e2130; --text: #e2e8f0; --muted: #5a6480; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    body::before { content:''; position:fixed; inset:0; z-index:0; background: radial-gradient(ellipse 60% 40% at 60% 0%, rgba(34,197,94,0.1) 0%, transparent 70%); pointer-events:none; }
+    .pipeline-board { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; overflow-x: auto; }
+    .pipeline-col { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 10px; padding: 12px; min-width: 140px; }
+    .col-header { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+    .col-value { font-size: 0.78rem; font-weight: 700; margin-bottom: 10px; }
+    .deal-card { background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 10px; margin-bottom: 8px; cursor: pointer; transition: border-color .2s; font-size: 0.78rem; }
+    .deal-card:hover { border-color: #3a3f55; }
+    .deal-title { font-weight: 600; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .deal-company { color: var(--muted); font-size: 0.7rem; }
+    .deal-value { font-weight: 700; margin-top: 5px; color: #34d399; }
+    .prob-bar { height: 2px; border-radius: 1px; background: var(--border); margin-top: 6px; }
+    .prob-fill { height: 100%; border-radius: 1px; background: #34d399; }
+    @media (max-width: 900px) { .pipeline-board { grid-template-columns: repeat(3, 1fr); } }
+  </style>
+  <link rel="stylesheet" href="/departments/dept.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="app">
+  <nav class="dept-nav">
+    <div class="dept-nav-left">
+      <a href="/dashboard" class="back-btn">← AI-BOS</a>
+      <div class="dept-badge" style="background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.4);color:#22c55e">
+        💼 Sales & CRM
+      </div>
+      <span class="dept-subtitle">Pipeline · Deals · Contacts</span>
+    </div>
+    <div class="dept-nav-right">
+      <a href="/war-room" class="war-room-btn">💬 War Room</a>
+      <div class="dept-links">
+        <a href="/department/it">☁️ IT</a>
+        <a href="/department/finance">💰 Finance</a>
+        <a href="/department/hr">👥 HR</a>
+        <a href="/department/marketing">📣 Marketing</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="dept-main">
+    <div class="kpi-row" id="kpi-row"></div>
+
+    <!-- Pipeline Board -->
+    <div class="dept-card" style="margin-bottom:18px">
+      <div class="card-header">
+        <div class="card-title">🏆 Deal Pipeline</div>
+        <button class="add-btn" onclick="openDealModal()">+ New Deal</button>
+      </div>
+      <div class="pipeline-board" id="pipeline-board"></div>
+    </div>
+
+    <div class="dept-grid">
+      <!-- Contacts -->
+      <div class="dept-card">
+        <div class="card-header">
+          <div class="card-title">📇 Contacts</div>
+          <button class="add-btn" onclick="openContactModal()">+ Add Contact</button>
+        </div>
+        <div id="contacts-list" class="data-list"></div>
+      </div>
+
+      <!-- Revenue Chart -->
+      <div class="dept-card">
+        <div class="card-title" style="margin-bottom:14px">📊 Pipeline by Stage</div>
+        <canvas id="pipeline-chart" height="200"></canvas>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Deal Modal -->
+<div id="deal-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-header"><span id="deal-modal-title">New Deal</span><button onclick="closeModal('deal-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Deal Title</label><input id="d-title" placeholder="e.g. Enterprise SaaS — Acme Corp"></div>
+      <div class="field-row">
+        <div class="field"><label>Company</label><input id="d-company" placeholder="Company name"></div>
+        <div class="field"><label>Value ($)</label><input id="d-value" type="number" min="0" placeholder="0"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Stage</label>
+          <select id="d-stage">
+            <option value="prospecting">Prospecting</option>
+            <option value="qualification">Qualification</option>
+            <option value="proposal">Proposal</option>
+            <option value="negotiation">Negotiation</option>
+            <option value="closed-won">Closed Won</option>
+            <option value="closed-lost">Closed Lost</option>
+          </select>
+        </div>
+        <div class="field"><label>Close Date</label><input id="d-close" type="date"></div>
+      </div>
+      <div class="field"><label>Notes</label><textarea id="d-notes" rows="2" placeholder="Key notes…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('deal-modal')">Cancel</button>
+      <button class="btn-primary" id="deal-save-btn" onclick="saveDeal()">Create Deal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Contact Modal -->
+<div id="contact-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-header"><span>Add Contact</span><button onclick="closeModal('contact-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field-row">
+        <div class="field"><label>Name</label><input id="c-name" placeholder="Full name"></div>
+        <div class="field"><label>Company</label><input id="c-company" placeholder="Company"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Email</label><input id="c-email" type="email" placeholder="email@company.com"></div>
+        <div class="field"><label>Phone</label><input id="c-phone" placeholder="+1 555..."></div>
+      </div>
+      <div class="field"><label>Lead Source</label>
+        <select id="c-source">
+          <option value="inbound">Inbound</option>
+          <option value="outbound">Outbound</option>
+          <option value="referral">Referral</option>
+          <option value="event">Event</option>
+          <option value="linkedin">LinkedIn</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('contact-modal')">Cancel</button>
+      <button class="btn-primary" onclick="createContact()">Add Contact</button>
+    </div>
+  </div>
+</div>
+
+<script src="/departments/dept.js"></script>
+<script>
+if (!localStorage.getItem('aibos_token')) window.location.href = '/login';
+
+const STAGES = ['prospecting','qualification','proposal','negotiation','closed-won','closed-lost'];
+const STAGE_LABELS = { prospecting:'Prospecting', qualification:'Qualify', proposal:'Proposal', negotiation:'Negotiate', 'closed-won':'Won ✓', 'closed-lost':'Lost ✗' };
+const STAGE_COLORS = { prospecting:'#5a6480', qualification:'#378ADD', proposal:'#f59e0b', negotiation:'#a78bfa', 'closed-won':'#34d399', 'closed-lost':'#f87171' };
+const STAGE_PROB = { prospecting:10, qualification:25, proposal:50, negotiation:75, 'closed-won':100, 'closed-lost':0 };
+
+let allDeals = [], allContacts = [], editingDealId = null, chartInst = null;
+
+async function load() {
+  const [pRes, cRes] = await Promise.all([
+    apiFetch('/api/sales/pipeline'),
+    apiFetch('/api/sales/contacts'),
+  ]);
+  const pipeline = await pRes.json();
+  allContacts = await cRes.json();
+  allDeals = STAGES.flatMap(s => (pipeline.pipeline[s]?.deals || []));
+  renderKPIs(pipeline);
+  renderPipelineBoard(pipeline);
+  renderContacts();
+  renderChart(pipeline);
+}
+
+function renderKPIs(p) {
+  document.getElementById('kpi-row').innerHTML = [
+    { label:'Open Deals', value: p.totalOpen, color:'#22c55e' },
+    { label:'Pipeline Value', value: formatCurrency(p.totalValue), color:'#34d399' },
+    { label:'Weighted Value', value: formatCurrency(p.weighted), color:'#a78bfa' },
+    { label:'Contacts', value: allContacts.length, color:'#60a5fa' },
+  ].map(k => `<div class="kpi-card"><div class="kpi-val" style="color:${k.color};font-size:${typeof k.value==='string'?'1.3rem':'2rem'}">${k.value}</div><div class="kpi-label">${k.label}</div></div>`).join('');
+}
+
+function renderPipelineBoard(p) {
+  document.getElementById('pipeline-board').innerHTML = STAGES.map(s => {
+    const col = p.pipeline[s];
+    const cards = col.deals.map(d => `
+      <div class="deal-card" onclick="editDeal('${d.id}')">
+        <div class="deal-title">${d.title}</div>
+        <div class="deal-company">${d.company}</div>
+        <div class="deal-value">${formatCurrency(d.value)}</div>
+        <div class="prob-bar"><div class="prob-fill" style="width:${d.probability}%;background:${STAGE_COLORS[s]}"></div></div>
+      </div>`).join('');
+    return `<div class="pipeline-col">
+      <div class="col-header" style="color:${STAGE_COLORS[s]}">${STAGE_LABELS[s]}</div>
+      <div class="col-value" style="color:${STAGE_COLORS[s]}">${formatCurrency(col.value)}</div>
+      ${cards}
+    </div>`;
+  }).join('');
+}
+
+function renderContacts() {
+  document.getElementById('contacts-list').innerHTML = allContacts.length ? allContacts.map(c => `
+    <div class="list-row">
+      <div class="list-main">
+        <div class="avatar-sm">${c.name[0].toUpperCase()}</div>
+        <div>
+          <div class="list-title">${c.name}</div>
+          <div class="list-sub">${c.company} · ${c.email || ''} · ${c.source || ''}</div>
+        </div>
+      </div>
+      <div class="list-actions">
+        <span class="badge" style="background:rgba(34,197,94,0.1);color:#22c55e;border-color:rgba(34,197,94,0.3)">${c.status}</span>
+        <button class="del-btn" onclick="deleteContact('${c.id}')">✕</button>
+      </div>
+    </div>`).join('') : '<div class="empty-state">No contacts yet</div>';
+}
+
+function renderChart(p) {
+  if (chartInst) chartInst.destroy();
+  const ctx = document.getElementById('pipeline-chart').getContext('2d');
+  const labels = STAGES.filter(s => s !== 'closed-lost').map(s => STAGE_LABELS[s]);
+  const values = STAGES.filter(s => s !== 'closed-lost').map(s => p.pipeline[s]?.value || 0);
+  const colors = STAGES.filter(s => s !== 'closed-lost').map(s => STAGE_COLORS[s]);
+  chartInst = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ data: values, backgroundColor: colors.map(c => c+'33'), borderColor: colors, borderWidth: 1.5, borderRadius: 6 }] },
+    options: {
+      responsive: true, plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: '#1e2130' }, ticks: { color: '#5a6480', font: { size: 10 } } },
+        y: { grid: { color: '#1e2130' }, ticks: { color: '#5a6480', font: { size: 10 }, callback: v => '$' + (v/1000).toFixed(0) + 'k' } },
+      },
+    },
+  });
+}
+
+function editDeal(id) {
+  const deal = allDeals.find(d => d.id === id);
+  if (!deal) return;
+  editingDealId = id;
+  document.getElementById('deal-modal-title').textContent = 'Edit Deal';
+  document.getElementById('deal-save-btn').textContent = 'Save Changes';
+  document.getElementById('d-title').value = deal.title;
+  document.getElementById('d-company').value = deal.company;
+  document.getElementById('d-value').value = deal.value;
+  document.getElementById('d-stage').value = deal.stage;
+  document.getElementById('d-close').value = deal.closeDate || '';
+  document.getElementById('d-notes').value = deal.notes || '';
+  document.getElementById('deal-modal').style.display = 'flex';
+}
+
+async function saveDeal() {
+  const body = { title: v('d-title'), company: v('d-company'), value: parseFloat(v('d-value'))||0, stage: v('d-stage'), closeDate: v('d-close'), notes: v('d-notes') };
+  if (!body.title || !body.company) return;
+  if (editingDealId) {
+    await apiFetch(`/api/sales/deals/${editingDealId}`, { method:'PATCH', body: JSON.stringify(body) });
+  } else {
+    await apiFetch('/api/sales/deals', { method:'POST', body: JSON.stringify(body) });
+  }
+  editingDealId = null;
+  document.getElementById('deal-modal-title').textContent = 'New Deal';
+  document.getElementById('deal-save-btn').textContent = 'Create Deal';
+  closeModal('deal-modal'); load();
+}
+
+async function createContact() {
+  const body = { name: v('c-name'), company: v('c-company'), email: v('c-email'), phone: v('c-phone'), source: v('c-source') };
+  if (!body.name) return;
+  await apiFetch('/api/sales/contacts', { method:'POST', body: JSON.stringify(body) });
+  closeModal('contact-modal'); load();
+}
+
+async function deleteContact(id) {
+  await apiFetch(`/api/sales/contacts/${id}`, { method:'DELETE' }); load();
+}
+
+function openDealModal() {
+  editingDealId = null;
+  document.getElementById('deal-modal-title').textContent = 'New Deal';
+  document.getElementById('deal-save-btn').textContent = 'Create Deal';
+  ['d-title','d-company','d-value','d-close','d-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('d-stage').value = 'prospecting';
+  document.getElementById('deal-modal').style.display = 'flex';
+}
+function openContactModal() { document.getElementById('contact-modal').style.display='flex'; }
+
+load();
+</script>
+</body>
+</html>

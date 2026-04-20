@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI-BOS · HR & Talent</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg: #06070b; --surface: #111318; --border: #1e2130; --text: #e2e8f0; --muted: #5a6480; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    body::before { content:''; position:fixed; inset:0; z-index:0; background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(167,139,250,0.1) 0%, transparent 70%); pointer-events:none; }
+  </style>
+  <link rel="stylesheet" href="/departments/dept.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="app">
+  <nav class="dept-nav">
+    <div class="dept-nav-left">
+      <a href="/dashboard" class="back-btn">← AI-BOS</a>
+      <div class="dept-badge" style="background:rgba(167,139,250,0.15);border-color:rgba(167,139,250,0.4);color:#a78bfa">
+        👥 HR & Talent
+      </div>
+      <span class="dept-subtitle">People · Performance · Growth</span>
+    </div>
+    <div class="dept-nav-right">
+      <a href="/war-room" class="war-room-btn">💬 War Room</a>
+      <div class="dept-links">
+        <a href="/department/it">☁️ IT</a>
+        <a href="/department/finance">💰 Finance</a>
+        <a href="/department/marketing">📣 Marketing</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="dept-main">
+    <div class="kpi-row" id="kpi-row"></div>
+
+    <div class="dept-grid">
+      <!-- Employee Directory -->
+      <div class="dept-card" style="grid-column: span 2">
+        <div class="card-header">
+          <div class="card-title">🏢 Employee Directory</div>
+          <div style="display:flex;gap:8px">
+            <button class="filter-btn active" onclick="filterEmp('all',this)">All</button>
+            <button class="filter-btn" onclick="filterEmp('active',this)">Active</button>
+            <button class="filter-btn" onclick="filterEmp('inactive',this)">Inactive</button>
+            <a href="/api/hr/employees/export" class="add-btn" style="text-decoration:none" download>⬇ CSV</a>
+            <button class="add-btn" onclick="openEmpModal()">+ Add Employee</button>
+          </div>
+        </div>
+        <div id="emp-list" class="data-list"></div>
+      </div>
+
+      <!-- Charts -->
+      <div class="dept-card">
+        <div class="card-title" style="margin-bottom:14px">🏢 Headcount by Department</div>
+        <canvas id="chart-dept" height="180"></canvas>
+      </div>
+      <div class="dept-card">
+        <div class="card-title" style="margin-bottom:14px">⭐ Rating Distribution</div>
+        <canvas id="chart-ratings" height="180"></canvas>
+      </div>
+
+      <!-- Performance Reviews -->
+      <div class="dept-card" style="grid-column: span 2">
+        <div class="card-header">
+          <div class="card-title">⭐ Performance Reviews</div>
+          <button class="add-btn" onclick="openReviewModal()">+ Add Review</button>
+        </div>
+        <div id="perf-list" class="data-list"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Employee Modal -->
+<div id="emp-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-header"><span>Add Employee</span><button onclick="closeModal('emp-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field-row">
+        <div class="field"><label>Full Name</label><input id="e-name" placeholder="Jane Smith"></div>
+        <div class="field"><label>Email</label><input id="e-email" type="email" placeholder="jane@company.com"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Role / Title</label><input id="e-role" placeholder="Senior Engineer"></div>
+        <div class="field"><label>Department</label>
+          <select id="e-dept">
+            <option value="engineering">Engineering</option>
+            <option value="it">IT & DevOps</option>
+            <option value="finance">Finance</option>
+            <option value="hr">HR</option>
+            <option value="marketing">Marketing</option>
+            <option value="sales">Sales</option>
+            <option value="legal">Legal</option>
+            <option value="operations">Operations</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Manager (optional)</label><input id="e-manager" placeholder="Manager name"></div>
+        <div class="field"><label>Start Date</label><input id="e-start" type="date"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('emp-modal')">Cancel</button>
+      <button class="btn-primary" onclick="createEmployee()">Add Employee</button>
+    </div>
+  </div>
+</div>
+
+<!-- Review Modal -->
+<div id="review-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-header"><span>Add Performance Review</span><button onclick="closeModal('review-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Employee</label>
+        <select id="r-emp"></select>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Overall Rating (1–5)</label>
+          <select id="r-rating">
+            <option value="5">5 – Exceptional</option>
+            <option value="4" selected>4 – Exceeds</option>
+            <option value="3">3 – Meets</option>
+            <option value="2">2 – Below</option>
+            <option value="1">1 – Unsatisfactory</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Summary</label><textarea id="r-summary" rows="3" placeholder="Key achievements, areas to improve…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('review-modal')">Cancel</button>
+      <button class="btn-primary" onclick="createReview()">Save Review</button>
+    </div>
+  </div>
+</div>
+
+<script src="/departments/dept.js"></script>
+<script>
+if (!localStorage.getItem('aibos_token')) window.location.href = '/login';
+
+const DEPT_COLOR = { engineering:'#60a5fa', it:'#378ADD', finance:'#34d399', hr:'#a78bfa', marketing:'#f59e0b', sales:'#fb923c', legal:'#94a3b8', operations:'#67e8f9' };
+const RATING_STAR = r => '⭐'.repeat(+r);
+let allEmployees = [], empFilter = 'all';
+
+async function load() {
+  const [eRes, pRes] = await Promise.all([
+    apiFetch('/api/hr/employees'),
+    apiFetch('/api/hr/performance'),
+  ]);
+  allEmployees = await eRes.json();
+  const perf = await pRes.json();
+  renderKPIs(allEmployees, perf);
+  renderEmployees();
+  renderPerformance(perf, allEmployees);
+  populateEmpSelect(allEmployees);
+  renderCharts(allEmployees, perf);
+}
+
+function renderKPIs(employees, perf) {
+  const active = employees.filter(e => e.status === 'active').length;
+  const depts  = new Set(employees.map(e => e.department)).size;
+  const avgRating = perf.length ? (perf.reduce((s,p) => s + +p.rating, 0) / perf.length).toFixed(1) : '–';
+  const onboarding = employees.filter(e => !e.onboarded && e.status === 'active').length;
+  document.getElementById('kpi-row').innerHTML = [
+    { label:'Active Employees', value: active, color:'#a78bfa' },
+    { label:'Departments',      value: depts,  color:'#60a5fa' },
+    { label:'Avg Rating',       value: avgRating, color:'#f59e0b' },
+    { label:'Needs Onboarding', value: onboarding, color:'#f87171' },
+  ].map(k => `<div class="kpi-card"><div class="kpi-val" style="color:${k.color}">${k.value}</div><div class="kpi-label">${k.label}</div></div>`).join('');
+}
+
+function filterEmp(status, btn) {
+  empFilter = status;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderEmployees();
+}
+
+function renderEmployees() {
+  const items = empFilter === 'all' ? allEmployees : allEmployees.filter(e => e.status === empFilter);
+  const deptColor = d => DEPT_COLOR[d] || '#5a6480';
+  document.getElementById('emp-list').innerHTML = items.length ? items.map(e => `
+    <div class="list-row">
+      <div class="list-main">
+        <div class="avatar-sm">${e.name[0].toUpperCase()}</div>
+        <div>
+          <div class="list-title">${e.name}</div>
+          <div class="list-sub">${e.role} · <span style="color:${deptColor(e.department)}">${e.department}</span>${e.manager ? ' · mgr: ' + e.manager : ''}</div>
+        </div>
+      </div>
+      <div class="list-actions">
+        <span class="badge" style="background:${e.status==='active'?'rgba(167,139,250,0.12)':'rgba(90,100,128,0.12)'};color:${e.status==='active'?'#a78bfa':'#5a6480'}">${e.status}</span>
+        <button onclick="toggleEmp('${e.id}','${e.status}')" class="icon-btn" title="Toggle status">⟳</button>
+        <button class="del-btn" onclick="deleteEmployee('${e.id}')">✕</button>
+      </div>
+    </div>`).join('') : '<div class="empty-state">No employees found</div>';
+}
+
+function renderPerformance(perf, employees) {
+  const empMap = Object.fromEntries(employees.map(e => [e.id, e.name]));
+  document.getElementById('perf-list').innerHTML = perf.length ? perf.map(p => `
+    <div class="list-row">
+      <div class="list-main">
+        <div>
+          <div class="list-title">${empMap[p.employeeId] || p.employeeId} · ${RATING_STAR(p.rating)}</div>
+          <div class="list-sub">${p.summary} · ${formatTimeAgo(p.date)}</div>
+        </div>
+      </div>
+    </div>`).join('') : '<div class="empty-state">No reviews yet</div>';
+}
+
+function populateEmpSelect(employees) {
+  document.getElementById('r-emp').innerHTML = employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+}
+
+async function createEmployee() {
+  const body = { name: v('e-name'), email: v('e-email'), role: v('e-role'), department: v('e-dept'), manager: v('e-manager'), startDate: v('e-start') };
+  if (!body.name || !body.role) return;
+  await apiFetch('/api/hr/employees', { method:'POST', body: JSON.stringify(body) });
+  closeModal('emp-modal'); load();
+}
+
+async function deleteEmployee(id) {
+  await apiFetch(`/api/hr/employees/${id}`, { method:'DELETE' }); load();
+}
+
+async function toggleEmp(id, status) {
+  await apiFetch(`/api/hr/employees/${id}`, { method:'PATCH', body: JSON.stringify({ status: status==='active'?'inactive':'active' }) }); load();
+}
+
+async function createReview() {
+  const body = { employeeId: v('r-emp'), rating: parseInt(v('r-rating')), summary: v('r-summary') };
+  if (!body.employeeId) return;
+  await apiFetch('/api/hr/performance', { method:'POST', body: JSON.stringify(body) });
+  closeModal('review-modal'); load();
+}
+
+function openEmpModal()    { document.getElementById('emp-modal').style.display='flex'; }
+function openReviewModal() { document.getElementById('review-modal').style.display='flex'; }
+
+function renderCharts(employees, perf) {
+  const deptMap = {};
+  employees.filter(e=>e.status==='active').forEach(e=>{ deptMap[e.department]=(deptMap[e.department]||0)+1; });
+  const depts = Object.entries(deptMap).sort((a,b)=>b[1]-a[1]);
+  const COLORS = ['#a78bfa','#60a5fa','#34d399','#f59e0b','#f87171','#fb923c','#67e8f9','#94a3b8'];
+  new Chart(document.getElementById('chart-dept'), {
+    type:'bar',
+    data:{ labels:depts.map(d=>d[0]), datasets:[{ data:depts.map(d=>d[1]), backgroundColor:COLORS.map(c=>c+'33'), borderColor:COLORS, borderWidth:2, borderRadius:6 }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ x:{grid:{color:'#1e2130'},ticks:{color:'#5a6480',font:{size:10}}}, y:{grid:{color:'#1e2130'},ticks:{color:'#5a6480',font:{size:10},stepSize:1}} } },
+  });
+  const ratingDist = {1:0,2:0,3:0,4:0,5:0};
+  perf.forEach(p=>{ if(ratingDist[p.rating]!==undefined) ratingDist[p.rating]++; });
+  new Chart(document.getElementById('chart-ratings'), {
+    type:'bar',
+    data:{ labels:['1★','2★','3★','4★','5★'], datasets:[{ data:Object.values(ratingDist), backgroundColor:['#f87171','#fb923c','#f59e0b','#34d399','#a78bfa'].map(c=>c+'33'), borderColor:['#f87171','#fb923c','#f59e0b','#34d399','#a78bfa'], borderWidth:2, borderRadius:6 }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ x:{grid:{color:'#1e2130'},ticks:{color:'#5a6480'}}, y:{grid:{color:'#1e2130'},ticks:{color:'#5a6480',stepSize:1}} } },
+  });
+}
+
+load();
+</script>
+</body>
+</html>

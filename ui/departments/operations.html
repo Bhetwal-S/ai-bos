@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI-BOS · Operations</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg: #07080f; --surface: #0e1018; --border: #1c2035; --text: #e8edf5; --muted: #5a6480; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    body::before { content:''; position:fixed; inset:0; z-index:0; background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(103,232,249,0.08) 0%, transparent 70%); pointer-events:none; }
+
+    .progress-bar-track { background: #1c2035; border-radius: 999px; height: 6px; width: 100%; margin-top: 4px; }
+    .progress-bar-fill  { height: 6px; border-radius: 999px; transition: width 0.3s; }
+
+    .okr-block { padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .okr-block:last-child { border-bottom: none; }
+    .okr-objective { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .okr-kr { font-size: 11px; color: var(--muted); margin: 4px 0 2px; }
+    .okr-meta { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  </style>
+  <link rel="stylesheet" href="/departments/dept.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="app">
+  <nav class="dept-nav">
+    <div class="dept-nav-left">
+      <a href="/dashboard" class="back-btn">← AI-BOS</a>
+      <div class="dept-badge" style="background:rgba(103,232,249,0.15);border-color:rgba(103,232,249,0.4);color:#67e8f9">
+        ⚙️ Operations
+      </div>
+      <span class="dept-subtitle">Projects · Tasks · OKRs</span>
+    </div>
+    <div class="dept-nav-right">
+      <a href="/war-room" class="war-room-btn">💬 War Room</a>
+      <div class="dept-links">
+        <a href="/department/it">☁️ IT</a>
+        <a href="/department/finance">💰 Finance</a>
+        <a href="/department/hr">👥 HR</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="dept-main">
+    <div class="kpi-row" id="kpi-row"></div>
+
+    <div class="dept-grid">
+      <!-- Projects -->
+      <div class="dept-card">
+        <div class="card-header">
+          <div class="card-title">📁 Projects</div>
+          <button class="add-btn" onclick="openProjectModal()">+ New Project</button>
+        </div>
+        <div id="project-list" class="data-list"></div>
+      </div>
+
+      <!-- Charts -->
+      <div class="dept-card" style="grid-column: span 2">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+          <div>
+            <div class="card-title" style="margin-bottom:14px">📁 Projects by Status</div>
+            <canvas id="chart-projects" height="180"></canvas>
+          </div>
+          <div>
+            <div class="card-title" style="margin-bottom:14px">✅ Tasks by Priority</div>
+            <canvas id="chart-tasks" height="180"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tasks -->
+      <div class="dept-card" style="grid-column: span 2">
+        <div class="card-header">
+          <div class="card-title">✅ Tasks</div>
+          <div style="display:flex;gap:8px">
+            <button class="filter-btn active" onclick="filterTasks('all',this)">All</button>
+            <button class="filter-btn" onclick="filterTasks('open',this)">Open</button>
+            <button class="filter-btn" onclick="filterTasks('in-progress',this)">In Progress</button>
+            <button class="filter-btn" onclick="filterTasks('done',this)">Done</button>
+            <button class="add-btn" onclick="openTaskModal()">+ New Task</button>
+          </div>
+        </div>
+        <div id="task-list" class="data-list"></div>
+      </div>
+
+      <!-- OKRs -->
+      <div class="dept-card" style="grid-column: span 2">
+        <div class="card-header">
+          <div class="card-title">🎯 OKRs</div>
+          <button class="add-btn" onclick="openOKRModal()">+ Add OKR</button>
+        </div>
+        <div id="okr-list" class="data-list"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Project Modal -->
+<div id="project-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-header"><span>New Project</span><button onclick="closeModal('project-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Name</label><input id="p-name" placeholder="Q3 Infrastructure Upgrade"></div>
+      <div class="field"><label>Description</label><textarea id="p-desc" rows="2" placeholder="Brief project description…"></textarea></div>
+      <div class="field-row">
+        <div class="field"><label>Status</label>
+          <select id="p-status">
+            <option value="planning">Planning</option>
+            <option value="active">Active</option>
+            <option value="on-hold">On Hold</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        <div class="field"><label>Due Date</label><input id="p-due" type="date"></div>
+      </div>
+      <div class="field"><label>Owner</label><input id="p-owner" placeholder="Jane Smith"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('project-modal')">Cancel</button>
+      <button class="btn-primary" onclick="createProject()">Save Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- Task Modal -->
+<div id="task-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-header"><span>New Task</span><button onclick="closeModal('task-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Title</label><input id="t-title" placeholder="Set up CI/CD pipeline"></div>
+      <div class="field-row">
+        <div class="field"><label>Project</label><select id="t-project"></select></div>
+        <div class="field"><label>Priority</label>
+          <select id="t-priority">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Assignee</label><input id="t-assignee" placeholder="Alex Jones"></div>
+        <div class="field"><label>Due Date</label><input id="t-due" type="date"></div>
+      </div>
+      <div class="field"><label>Status</label>
+        <select id="t-status">
+          <option value="open">Open</option>
+          <option value="in-progress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('task-modal')">Cancel</button>
+      <button class="btn-primary" onclick="createTask()">Save Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- OKR Modal -->
+<div id="okr-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-header"><span>Add OKR</span><button onclick="closeModal('okr-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Objective</label><input id="o-objective" placeholder="Improve operational efficiency by 20%"></div>
+      <div class="field"><label>Key Results <span style="color:var(--muted);font-size:11px">(one per line)</span></label>
+        <textarea id="o-krs" rows="4" placeholder="Reduce ticket resolution time to under 2 days&#10;Automate 5 manual processes&#10;Achieve 99.5% uptime"></textarea>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Target Quarter</label><input id="o-quarter" placeholder="Q2 2026"></div>
+        <div class="field"><label>Owner</label><input id="o-owner" placeholder="Sam Lee"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('okr-modal')">Cancel</button>
+      <button class="btn-primary" onclick="createOKR()">Save OKR</button>
+    </div>
+  </div>
+</div>
+
+<script src="/departments/dept.js"></script>
+<script>
+if (!localStorage.getItem('aibos_token')) window.location.href = '/login';
+
+const PROJECT_STATUS_COLOR = { planning:'#5a6480', active:'#67e8f9', 'on-hold':'#f59e0b', completed:'#34d399' };
+const TASK_STATUS_COLOR    = { open:'#5a6480', 'in-progress':'#f59e0b', done:'#34d399', blocked:'#f87171' };
+const PRIORITY_COLOR       = { low:'#34d399', medium:'#f59e0b', high:'#f87171', critical:'#dc2626' };
+
+let allProjects = [], allTasks = [], allOKRs = [], taskFilter = 'all';
+let chartProjects = null, chartTasks = null;
+
+async function load() {
+  const [pRes, tRes, oRes] = await Promise.all([
+    apiFetch('/api/ops/projects'),
+    apiFetch('/api/ops/tasks'),
+    apiFetch('/api/ops/okrs'),
+  ]);
+  allProjects = await pRes.json();
+  allTasks    = await tRes.json();
+  allOKRs     = await oRes.json();
+  renderKPIs();
+  renderProjects();
+  renderTasks();
+  renderOKRs();
+  populateProjectSelect();
+  renderCharts();
+}
+
+function renderKPIs() {
+  const activeProjects = allProjects.filter(p => p.status === 'active').length;
+  const openTasks      = allTasks.filter(t => t.status === 'open').length;
+  const onTrack        = allOKRs.filter(o => (o.progress || 0) >= 70).length;
+  const sevenDaysAgo   = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const velocity       = allTasks.filter(t => t.status === 'done' && t.updatedAt && t.updatedAt >= sevenDaysAgo).length;
+  document.getElementById('kpi-row').innerHTML = [
+    { label:'Active Projects',  value: activeProjects, color:'#67e8f9' },
+    { label:'Open Tasks',       value: openTasks,      color:'#f59e0b' },
+    { label:'OKRs On Track',    value: onTrack,        color:'#34d399' },
+    { label:'Team Velocity',    value: velocity,       color:'#94a3b8' },
+  ].map(k => `<div class="kpi-card"><div class="kpi-val" style="color:${k.color}">${k.value}</div><div class="kpi-label">${k.label}</div></div>`).join('');
+}
+
+function renderProjects() {
+  document.getElementById('project-list').innerHTML = allProjects.length ? allProjects.map(p => {
+    const sc    = PROJECT_STATUS_COLOR[p.status] || '#5a6480';
+    const total = p.totalTasks || 0;
+    const done  = p.completedTasks || 0;
+    const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
+    return `
+    <div class="list-row" style="flex-direction:column;align-items:stretch;gap:6px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="list-main" style="gap:8px">
+          <div>
+            <div class="list-title">${p.name}</div>
+            <div class="list-sub">${p.owner ? 'Owner: ' + p.owner : ''}${p.dueDate ? ' · Due: ' + p.dueDate : ''}</div>
+          </div>
+        </div>
+        <div class="list-actions">
+          <span class="badge" style="background:${sc}22;color:${sc}">${p.status}</span>
+          <button class="del-btn" onclick="deleteProject('${p.id}')">✕</button>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:2px">
+          <span>${done}/${total} tasks</span><span>${pct}%</span>
+        </div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" style="width:${pct}%;background:${sc}"></div></div>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty-state">No projects yet</div>';
+}
+
+function filterTasks(status, btn) {
+  taskFilter = status;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTasks();
+}
+
+function renderTasks() {
+  const items = taskFilter === 'all' ? allTasks : allTasks.filter(t => t.status === taskFilter);
+  const projMap = Object.fromEntries(allProjects.map(p => [p.id, p.name]));
+  document.getElementById('task-list').innerHTML = items.length ? items.map(t => {
+    const sc = TASK_STATUS_COLOR[t.status]  || '#5a6480';
+    const pc = PRIORITY_COLOR[t.priority]   || '#5a6480';
+    return `
+    <div class="list-row">
+      <div class="list-main">
+        <div>
+          <div class="list-title">${t.title}</div>
+          <div class="list-sub">${projMap[t.projectId] ? projMap[t.projectId] + ' · ' : ''}${t.assignee ? t.assignee : ''}${t.dueDate ? ' · Due: ' + t.dueDate : ''}</div>
+        </div>
+      </div>
+      <div class="list-actions">
+        <span class="badge" style="background:${pc}22;color:${pc}">${t.priority}</span>
+        <span class="badge" style="background:${sc}22;color:${sc}">${t.status}</span>
+        <button class="del-btn" onclick="deleteTask('${t.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty-state">No tasks found</div>';
+}
+
+function renderOKRs() {
+  document.getElementById('okr-list').innerHTML = allOKRs.length ? allOKRs.map(o => {
+    const progress = o.progress || 0;
+    const isOnTrack = progress >= 70;
+    const trackColor = isOnTrack ? '#34d399' : '#f59e0b';
+    const krs = Array.isArray(o.keyResults)
+      ? o.keyResults
+      : (o.keyResults || '').split('\n').filter(Boolean);
+    return `
+    <div class="okr-block">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="okr-objective">${o.objective}</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge" style="background:${trackColor}22;color:${trackColor}">${isOnTrack ? 'On Track' : 'At Risk'}</span>
+          <button class="del-btn" onclick="deleteOKR('${o.id}')">✕</button>
+        </div>
+      </div>
+      ${krs.map(kr => `<div class="okr-kr">• ${kr}</div>`).join('')}
+      <div class="progress-bar-track" style="margin-top:8px"><div class="progress-bar-fill" style="width:${progress}%;background:${trackColor}"></div></div>
+      <div class="okr-meta">${o.targetQuarter ? o.targetQuarter : ''}${o.owner ? ' · ' + o.owner : ''} · ${progress}% complete</div>
+    </div>`;
+  }).join('') : '<div class="empty-state">No OKRs yet</div>';
+}
+
+function populateProjectSelect() {
+  document.getElementById('t-project').innerHTML =
+    '<option value="">— None —</option>' +
+    allProjects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+}
+
+function renderCharts() {
+  const statusCounts = {};
+  allProjects.forEach(p => { statusCounts[p.status] = (statusCounts[p.status] || 0) + 1; });
+  const sLabels = Object.keys(statusCounts);
+  const sColors = sLabels.map(s => PROJECT_STATUS_COLOR[s] || '#5a6480');
+
+  if (chartProjects) { chartProjects.destroy(); chartProjects = null; }
+  chartProjects = new Chart(document.getElementById('chart-projects'), {
+    type: 'doughnut',
+    data: {
+      labels: sLabels,
+      datasets: [{ data: sLabels.map(s => statusCounts[s]), backgroundColor: sColors.map(c => c + '55'), borderColor: sColors, borderWidth: 2 }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#5a6480', font: { size: 11 } } } } },
+  });
+
+  const priCounts = { low: 0, medium: 0, high: 0, critical: 0 };
+  allTasks.forEach(t => { if (priCounts[t.priority] !== undefined) priCounts[t.priority]++; });
+  const priColors = [PRIORITY_COLOR.low, PRIORITY_COLOR.medium, PRIORITY_COLOR.high, PRIORITY_COLOR.critical];
+
+  if (chartTasks) { chartTasks.destroy(); chartTasks = null; }
+  chartTasks = new Chart(document.getElementById('chart-tasks'), {
+    type: 'bar',
+    data: {
+      labels: ['Low', 'Medium', 'High', 'Critical'],
+      datasets: [{ data: Object.values(priCounts), backgroundColor: priColors.map(c => c + '44'), borderColor: priColors, borderWidth: 2, borderRadius: 6 }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#1c2035' }, ticks: { color: '#5a6480', font: { size: 10 } } }, y: { grid: { color: '#1c2035' }, ticks: { color: '#5a6480', font: { size: 10 }, stepSize: 1 } } } },
+  });
+}
+
+async function createProject() {
+  const body = {
+    name:        v('p-name'),
+    description: v('p-desc'),
+    status:      v('p-status'),
+    dueDate:     v('p-due'),
+    owner:       v('p-owner'),
+  };
+  if (!body.name) return;
+  await apiFetch('/api/ops/projects', { method: 'POST', body: JSON.stringify(body) });
+  closeModal('project-modal');
+  load();
+}
+
+async function deleteProject(id) {
+  await apiFetch(`/api/ops/projects/${id}`, { method: 'DELETE' });
+  load();
+}
+
+async function createTask() {
+  const body = {
+    title:     v('t-title'),
+    projectId: v('t-project'),
+    priority:  v('t-priority'),
+    assignee:  v('t-assignee'),
+    dueDate:   v('t-due'),
+    status:    v('t-status'),
+  };
+  if (!body.title) return;
+  await apiFetch('/api/ops/tasks', { method: 'POST', body: JSON.stringify(body) });
+  closeModal('task-modal');
+  load();
+}
+
+async function deleteTask(id) {
+  await apiFetch(`/api/ops/tasks/${id}`, { method: 'DELETE' });
+  load();
+}
+
+async function createOKR() {
+  const body = {
+    objective:     v('o-objective'),
+    keyResults:    v('o-krs').split('\n').map(s => s.trim()).filter(Boolean),
+    targetQuarter: v('o-quarter'),
+    owner:         v('o-owner'),
+    progress:      0,
+  };
+  if (!body.objective) return;
+  await apiFetch('/api/ops/okrs', { method: 'POST', body: JSON.stringify(body) });
+  closeModal('okr-modal');
+  load();
+}
+
+async function deleteOKR(id) {
+  await apiFetch(`/api/ops/okrs/${id}`, { method: 'DELETE' });
+  load();
+}
+
+function openProjectModal() { document.getElementById('project-modal').style.display = 'flex'; }
+function openTaskModal()    { populateProjectSelect(); document.getElementById('task-modal').style.display = 'flex'; }
+function openOKRModal()     { document.getElementById('okr-modal').style.display = 'flex'; }
+
+load();
+</script>
+</body>
+</html>

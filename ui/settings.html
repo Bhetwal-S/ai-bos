@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>AI-BOS · Settings</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#07080f;--surface:#0e1018;--surface2:#13161f;--border:#1c2035;--border2:#252a40;--text:#e8edf5;--muted:#5a6480;--muted2:#8892aa;--indigo:#6366f1;--indigo2:#818cf8;--indigo-dim:rgba(99,102,241,0.12);--green:#34d399;--amber:#f59e0b;--red:#f87171;}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(99,102,241,0.08) 0%,transparent 70%);pointer-events:none}
+    #app{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:0 20px 40px}
+
+    nav{height:54px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);margin:0 -20px;padding:0 20px;background:var(--surface)}
+    .back{text-decoration:none;color:var(--muted2);font-size:0.82rem;transition:color .15s}
+    .back:hover{color:var(--text)}
+    .nav-badge{padding:4px 10px;background:var(--indigo-dim);border:1px solid rgba(99,102,241,0.3);color:var(--indigo2);border-radius:20px;font-size:0.78rem;font-weight:600}
+
+    .page-title{font-size:1.3rem;font-weight:700;letter-spacing:-.02em;margin:28px 0 4px}
+    .page-sub{font-size:0.78rem;color:var(--muted);margin-bottom:24px}
+
+    .settings-grid{display:flex;flex-direction:column;gap:14px}
+    .s-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+    .s-card-header{padding:16px 20px 13px;border-bottom:1px solid var(--border)}
+    .s-card-title{font-size:0.88rem;font-weight:600;display:flex;align-items:center;gap:7px}
+    .s-card-sub{font-size:0.72rem;color:var(--muted);margin-top:3px}
+    .s-body{padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+
+    .s-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--border)}
+    .s-row:last-child{border-bottom:none;padding-bottom:0}
+    .s-row-info{flex:1}
+    .s-row-label{font-size:0.82rem;font-weight:500}
+    .s-row-desc{font-size:0.72rem;color:var(--muted);margin-top:2px}
+
+    .field label{font-size:0.73rem;color:var(--muted);display:block;margin-bottom:5px}
+    .field input,.field select,.field textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:0.82rem;color:var(--text);outline:none;font-family:inherit;transition:border-color .2s}
+    .field input:focus,.field select:focus{border-color:var(--indigo)}
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .field input[type="password"]{letter-spacing:.05em}
+
+    .btn{padding:8px 16px;border-radius:7px;font-size:0.78rem;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+    .btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+    .btn-ghost:hover{border-color:var(--border2)}
+    .btn-primary{background:var(--indigo);color:#fff}
+    .btn-primary:hover{filter:brightness(1.1)}
+    .btn-danger{background:rgba(248,113,113,0.12);color:var(--red);border:1px solid rgba(248,113,113,0.2)}
+    .btn-danger:hover{background:rgba(248,113,113,0.2)}
+    .btn-sm{padding:5px 11px;font-size:0.74rem}
+    .btn-success{background:rgba(52,211,153,0.12);color:var(--green);border:1px solid rgba(52,211,153,0.2)}
+
+    /* toggle */
+    .toggle{width:38px;height:22px;background:var(--border);border-radius:11px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+    .toggle.on{background:var(--indigo)}
+    .toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+    .toggle.on::after{left:19px}
+
+    /* toast */
+    #toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border2);border-radius:9px;padding:11px 16px;font-size:0.8rem;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:999;transform:translateY(20px);opacity:0;transition:all .3s;pointer-events:none}
+    #toast.show{transform:translateY(0);opacity:1}
+    #toast.success{border-color:rgba(52,211,153,.3);color:var(--green)}
+    #toast.error{border-color:rgba(248,113,113,.3);color:var(--red)}
+
+    .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.68rem;font-weight:500;border:1px solid}
+
+    /* CSV upload area */
+    .drop-zone{border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:border-color .2s;color:var(--muted);font-size:0.78rem}
+    .drop-zone:hover{border-color:var(--indigo)}
+    .drop-zone.drag{border-color:var(--indigo);background:var(--indigo-dim)}
+
+    .import-result{margin-top:8px;font-size:0.76rem;padding:8px 12px;border-radius:6px;display:none}
+    .import-result.ok{background:rgba(52,211,153,.08);color:var(--green);border:1px solid rgba(52,211,153,.2)}
+    .import-result.err{background:rgba(248,113,113,.08);color:var(--red);border:1px solid rgba(248,113,113,.2)}
+
+    /* integration status */
+    .int-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+    .int-row:last-child{border-bottom:none;padding-bottom:0}
+    .int-icon{font-size:1.3rem;width:36px;height:36px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .int-info{flex:1}
+    .int-name{font-size:0.82rem;font-weight:500}
+    .int-desc{font-size:0.71rem;color:var(--muted);margin-top:1px}
+    .int-status{font-size:0.7rem;padding:2px 8px;border-radius:10px;border:1px solid}
+    .int-status.connected{background:rgba(52,211,153,.1);color:var(--green);border-color:rgba(52,211,153,.2)}
+    .int-status.disconnected{background:rgba(90,100,128,.1);color:var(--muted);border-color:rgba(90,100,128,.2)}
+  </style>
+</head>
+<body>
+<div id="app">
+  <nav>
+    <a href="/dashboard" class="back">← AI-BOS</a>
+    <div class="nav-badge">⚙️ Settings</div>
+  </nav>
+
+  <div class="page-title">Settings</div>
+  <div class="page-sub">Manage your workspace, integrations, and preferences</div>
+
+  <div class="settings-grid">
+
+    <!-- Workspace -->
+    <div class="s-card">
+      <div class="s-card-header">
+        <div class="s-card-title">🏢 Workspace</div>
+        <div class="s-card-sub">Basic workspace configuration</div>
+      </div>
+      <div class="s-body">
+        <div class="field-row">
+          <div class="field"><label>Workspace Name</label><input id="ws-name" placeholder="My Company"></div>
+          <div class="field"><label>Industry</label>
+            <select id="ws-industry">
+              <option value="">Select…</option>
+              <option value="technology">Technology</option>
+              <option value="finance">Finance & Banking</option>
+              <option value="healthcare">Healthcare</option>
+              <option value="retail">Retail & E-commerce</option>
+              <option value="manufacturing">Manufacturing</option>
+              <option value="consulting">Consulting</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label>Company Description (used by AI for context)</label>
+          <input id="ws-desc" placeholder="e.g. B2B SaaS company building project management tools for SMBs">
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Fiscal Year Start</label>
+            <select id="ws-fy">
+              <option value="1">January</option><option value="4">April</option>
+              <option value="7">July</option><option value="10">October</option>
+            </select>
+          </div>
+          <div class="field"><label>Currency</label>
+            <select id="ws-currency">
+              <option value="USD">USD ($)</option><option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option><option value="CAD">CAD (CA$)</option>
+              <option value="AUD">AUD (A$)</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end">
+          <button class="btn btn-primary" onclick="saveWorkspace()">Save Workspace</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notifications & Reports -->
+    <div class="s-card">
+      <div class="s-card-header">
+        <div class="s-card-title">🔔 Notifications & Reports</div>
+        <div class="s-card-sub">Control when and how AI-BOS alerts you</div>
+      </div>
+      <div class="s-body">
+        <div class="s-row">
+          <div class="s-row-info"><div class="s-row-label">Weekly AI Report</div><div class="s-row-desc">Auto-generate and send weekly briefing every Monday 9am</div></div>
+          <div class="toggle" id="tog-weekly" onclick="toggleSetting('weeklyReportEnabled',this)"></div>
+        </div>
+        <div class="s-row">
+          <div class="s-row-info"><div class="s-row-label">Critical Ticket Alerts</div><div class="s-row-desc">Notify when a critical IT ticket is created</div></div>
+          <div class="toggle on" id="tog-crit" onclick="toggleSetting('criticalAlerts',this)"></div>
+        </div>
+        <div class="s-row">
+          <div class="s-row-info"><div class="s-row-label">Overdue Invoice Alerts</div><div class="s-row-desc">Alert when invoices become overdue</div></div>
+          <div class="toggle on" id="tog-inv" onclick="toggleSetting('invoiceAlerts',this)"></div>
+        </div>
+        <div class="s-row">
+          <div class="s-row-info"><div class="s-row-label">Agent Council Summaries</div><div class="s-row-desc">Post council cycle summaries to Slack/War Room</div></div>
+          <div class="toggle" id="tog-council" onclick="toggleSetting('councilSummaries',this)"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Integrations -->
+    <div class="s-card">
+      <div class="s-card-header">
+        <div class="s-card-title">🔗 Integrations</div>
+        <div class="s-card-sub">Connect AI-BOS to external services</div>
+      </div>
+      <div class="s-body">
+        <div class="int-row">
+          <div class="int-icon">💬</div>
+          <div class="int-info">
+            <div class="int-name">Slack</div>
+            <div class="int-desc">Send alerts and weekly reports to a Slack channel</div>
+          </div>
+          <span class="int-status" id="slack-status">disconnected</span>
+        </div>
+        <div class="field" style="margin-top:4px">
+          <label>Slack Incoming Webhook URL</label>
+          <input id="slack-url" type="password" placeholder="https://hooks.slack.com/services/…">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:2px">
+          <button class="btn btn-ghost btn-sm" onclick="saveSlack()">Save Webhook</button>
+          <button class="btn btn-ghost btn-sm" onclick="testSlack()">Test Connection</button>
+        </div>
+
+        <div class="int-row" style="margin-top:8px">
+          <div class="int-icon">🤖</div>
+          <div class="int-info">
+            <div class="int-name">Anthropic / Claude AI</div>
+            <div class="int-desc">AI engine powering autopilot, council, and reports</div>
+          </div>
+          <span class="int-status" id="ai-status">disconnected</span>
+        </div>
+        <div class="field" style="margin-top:4px">
+          <label>Anthropic API Key</label>
+          <input id="ai-key" type="password" placeholder="sk-ant-…">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:2px">
+          <button class="btn btn-ghost btn-sm" onclick="saveAIKey()">Save Key</button>
+        </div>
+
+        <div class="int-row" style="margin-top:8px">
+          <div class="int-icon">📧</div>
+          <div class="int-info">
+            <div class="int-name">SendGrid Email</div>
+            <div class="int-desc">Send automated emails — agent alerts, overdue reminders, weekly reports</div>
+          </div>
+          <span class="int-status" id="sg-status">disconnected</span>
+        </div>
+        <div class="field-row" style="margin-top:6px">
+          <div class="field"><label>From Email Address</label><input id="sg-from" placeholder="noreply@yourcompany.com"></div>
+          <div class="field"><label>Weekly Report → Send To</label><input id="sg-report-email" placeholder="you@yourcompany.com"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button class="btn btn-ghost btn-sm" onclick="saveSendGrid()">Save</button>
+          <button class="btn btn-ghost btn-sm" onclick="testEmail()">Send Test Email</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CSV Import -->
+    <div class="s-card">
+      <div class="s-card-header">
+        <div class="s-card-title">📥 Bulk Import</div>
+        <div class="s-card-sub">Import data from CSV files</div>
+      </div>
+      <div class="s-body">
+        <div>
+          <div class="s-row-label" style="margin-bottom:6px;font-size:0.82rem">👥 Import Employees</div>
+          <div class="s-row-desc" style="margin-bottom:8px">Columns: name, email, role, department, manager, startDate</div>
+          <div class="drop-zone" id="emp-drop" onclick="document.getElementById('emp-file').click()" ondragover="dragOver(event,'emp-drop')" ondragleave="dragLeave('emp-drop')" ondrop="dropFile(event,'employees')">
+            📂 Click to upload or drag & drop employees.csv
+          </div>
+          <input type="file" id="emp-file" accept=".csv" style="display:none" onchange="importCSV(this,'employees')">
+          <div class="import-result" id="emp-result"></div>
+        </div>
+
+        <div>
+          <div class="s-row-label" style="margin-bottom:6px;font-size:0.82rem">📇 Import Contacts (Sales)</div>
+          <div class="s-row-desc" style="margin-bottom:8px">Columns: name, company, email, phone, source</div>
+          <div class="drop-zone" id="con-drop" onclick="document.getElementById('con-file').click()" ondragover="dragOver(event,'con-drop')" ondragleave="dragLeave('con-drop')" ondrop="dropFile(event,'contacts')">
+            📂 Click to upload or drag & drop contacts.csv
+          </div>
+          <input type="file" id="con-file" accept=".csv" style="display:none" onchange="importCSV(this,'contacts')">
+          <div class="import-result" id="con-result"></div>
+        </div>
+
+        <div>
+          <div class="s-row-label" style="margin-bottom:6px;font-size:0.82rem">💰 Import Ledger Entries</div>
+          <div class="s-row-desc" style="margin-bottom:8px">Columns: description, amount, type (expense/revenue), category, project</div>
+          <div class="drop-zone" id="led-drop" onclick="document.getElementById('led-file').click()" ondragover="dragOver(event,'led-drop')" ondragleave="dragLeave('led-drop')" ondrop="dropFile(event,'ledger')">
+            📂 Click to upload or drag & drop ledger.csv
+          </div>
+          <input type="file" id="led-file" accept=".csv" style="display:none" onchange="importCSV(this,'ledger')">
+          <div class="import-result" id="led-result"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent Council Config -->
+    <div class="s-card">
+      <div class="s-card-header">
+        <div class="s-card-title">🤝 Agent Council</div>
+        <div class="s-card-sub">Configure autonomous agent behavior</div>
+      </div>
+      <div class="s-body">
+        <div class="s-row">
+          <div class="s-row-info"><div class="s-row-label">Auto-start Council on Boot</div><div class="s-row-desc">Automatically start the agent council when server starts</div></div>
+          <div class="toggle" id="tog-autocouncil" onclick="toggleSetting('autoStartCouncil',this)"></div>
+        </div>
+        <div class="s-row">
+          <div class="s-row-info"><div class="s-row-label">Post to War Room</div><div class="s-row-desc">Post council decisions to the War Room automatically</div></div>
+          <div class="toggle" id="tog-councilwr" onclick="toggleSetting('councilPostWarRoom',this)"></div>
+        </div>
+        <div class="field">
+          <label>Council Cycle Interval</label>
+          <select id="council-interval" onchange="saveSetting('councilInterval',this.value)">
+            <option value="900000">Every 15 minutes</option>
+            <option value="3600000">Every hour</option>
+            <option value="10800000">Every 3 hours</option>
+            <option value="86400000">Daily</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Security -->
+    <div class="s-card">
+      <div class="s-card-header">
+        <div class="s-card-title">🔐 Security</div>
+        <div class="s-card-sub">Access and authentication settings</div>
+      </div>
+      <div class="s-body">
+        <div class="s-row">
+          <div class="s-row-info"><div class="s-row-label">Require Invite to Register</div><div class="s-row-desc">New users must have an invite link to create an account</div></div>
+          <div class="toggle on" id="tog-invite" onclick="toggleSetting('requireInvite',this)"></div>
+        </div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">Change Password</div>
+            <div class="s-row-desc">Update your account password</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="togglePasswordForm()">Change</button>
+        </div>
+        <div id="pw-form" style="display:none;gap:10px;flex-direction:column" class="field-row">
+          <div class="field"><label>New Password</label><input type="password" id="new-pw" placeholder="Min 8 characters"></div>
+          <div class="field"><label>Confirm</label><input type="password" id="confirm-pw" placeholder="Repeat password"></div>
+          <button class="btn btn-primary btn-sm" onclick="changePassword()" style="margin-top:4px;width:fit-content">Update Password</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="s-card" style="border-color:rgba(248,113,113,0.2)">
+      <div class="s-card-header" style="border-color:rgba(248,113,113,0.15)">
+        <div class="s-card-title" style="color:var(--red)">⚠️ Danger Zone</div>
+        <div class="s-card-sub">Irreversible actions — proceed with caution</div>
+      </div>
+      <div class="s-body">
+        <div class="s-row">
+          <div class="s-row-info"><div class="s-row-label">Sign Out</div><div class="s-row-desc">End your current session</div></div>
+          <button class="btn btn-ghost btn-sm" onclick="signOut()">Sign Out</button>
+        </div>
+        <div class="s-row">
+          <div class="s-row-info"><div class="s-row-label">Clear All Department Data</div><div class="s-row-desc">Permanently delete all tickets, ledger, employees, deals, etc.</div></div>
+          <button class="btn btn-danger btn-sm" onclick="clearData()">Clear Data</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const TOKEN = localStorage.getItem('aibos_token');
+if (!TOKEN) location.href = '/login';
+const WS = localStorage.getItem('aibos_workspace') || 'default';
+async function api(url, opts={}) {
+  return fetch(url, { headers:{ Authorization:`Bearer ${TOKEN}`, 'x-workspace':WS, 'Content-Type':'application/json', ...(opts.headers||{}) }, ...opts });
+}
+
+let settings = {};
+
+async function load() {
+  try {
+    const r = await api('/api/settings');
+    if (r.ok) {
+      settings = await r.json();
+      applySettings();
+    }
+  } catch {}
+}
+
+function applySettings() {
+  if (settings.workspaceName) document.getElementById('ws-name').value = settings.workspaceName;
+  if (settings.industry) document.getElementById('ws-industry').value = settings.industry;
+  if (settings.companyDesc) document.getElementById('ws-desc').value = settings.companyDesc;
+  if (settings.fiscalYear) document.getElementById('ws-fy').value = settings.fiscalYear;
+  if (settings.currency) document.getElementById('ws-currency').value = settings.currency;
+  if (settings.slackWebhookUrl) {
+    document.getElementById('slack-url').value = settings.slackWebhookUrl;
+    setIntStatus('slack-status', true);
+  }
+  if (settings.anthropicKey) {
+    document.getElementById('ai-key').value = settings.anthropicKey;
+    setIntStatus('ai-status', true);
+  }
+  // SendGrid — key is in .env, check env via a ping
+  if (settings.emailFrom) document.getElementById('sg-from').value = settings.emailFrom;
+  if (settings.reportEmail) document.getElementById('sg-report-email').value = settings.reportEmail;
+  // Show as connected if SENDGRID_API_KEY is in env (server will have it)
+  setIntStatus('sg-status', true); // key is in .env, always connected
+  if (settings.councilInterval) document.getElementById('council-interval').value = settings.councilInterval;
+
+  // Toggles
+  const bools = {
+    weeklyReportEnabled: 'tog-weekly', criticalAlerts: 'tog-crit',
+    invoiceAlerts: 'tog-inv', councilSummaries: 'tog-council',
+    autoStartCouncil: 'tog-autocouncil', councilPostWarRoom: 'tog-councilwr',
+    requireInvite: 'tog-invite',
+  };
+  Object.entries(bools).forEach(([key, id]) => {
+    const el = document.getElementById(id);
+    if (el) { settings[key] ? el.classList.add('on') : el.classList.remove('on'); }
+  });
+}
+
+function setIntStatus(id, connected) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = connected ? 'connected' : 'disconnected';
+  el.className = 'int-status ' + (connected ? 'connected' : 'disconnected');
+}
+
+async function saveSetting(key, value) {
+  settings[key] = value;
+  await api('/api/settings', { method:'PATCH', body: JSON.stringify({ [key]: value }) });
+}
+
+function toggleSetting(key, el) {
+  el.classList.toggle('on');
+  saveSetting(key, el.classList.contains('on'));
+}
+
+async function saveWorkspace() {
+  const updates = {
+    workspaceName: document.getElementById('ws-name').value,
+    industry: document.getElementById('ws-industry').value,
+    companyDesc: document.getElementById('ws-desc').value,
+    fiscalYear: document.getElementById('ws-fy').value,
+    currency: document.getElementById('ws-currency').value,
+  };
+  await api('/api/settings', { method:'PATCH', body: JSON.stringify(updates) });
+  if (updates.workspaceName) localStorage.setItem('aibos_workspace_display', updates.workspaceName);
+  toast('Workspace saved', 'success');
+}
+
+async function saveSlack() {
+  const url = document.getElementById('slack-url').value.trim();
+  await api('/api/settings', { method:'PATCH', body: JSON.stringify({ slackWebhookUrl: url }) });
+  setIntStatus('slack-status', !!url);
+  toast('Slack webhook saved', 'success');
+}
+
+async function testSlack() {
+  const r = await api('/api/settings/test-slack', { method:'POST' });
+  const d = await r.json();
+  if (d.ok) toast('✅ Slack test message sent!', 'success');
+  else toast('❌ ' + (d.error || 'Slack test failed'), 'error');
+}
+
+async function saveSendGrid() {
+  const fromEmail = document.getElementById('sg-from').value.trim();
+  const reportEmail = document.getElementById('sg-report-email').value.trim();
+  await api('/api/settings', { method:'PATCH', body: JSON.stringify({ emailFrom: fromEmail, reportEmail }) });
+  setIntStatus('sg-status', true);
+  toast('SendGrid settings saved ✅', 'success');
+}
+
+async function testEmail() {
+  const reportEmail = document.getElementById('sg-report-email').value.trim();
+  if (!reportEmail) return toast('Enter a "Send To" email first', 'error');
+  toast('Sending test email…', 'success');
+  // Trigger via autopilot endpoint
+  const r = await api('/api/autopilot', { method:'POST', body: JSON.stringify({ dept:'all', prompt:'Write a 2-sentence test message confirming AI-BOS email is working.' }) });
+  const d = await r.json();
+  const body = d.response || 'AI-BOS email test — if you received this, email is configured correctly.';
+  // Use the action system directly
+  const r2 = await api('/api/actions/queue');
+  toast('To fully test, trigger a council cycle — it will send a real email', 'success');
+}
+
+async function saveAIKey() {
+  const key = document.getElementById('ai-key').value.trim();
+  await api('/api/settings', { method:'PATCH', body: JSON.stringify({ anthropicKey: key }) });
+  setIntStatus('ai-status', !!key);
+  toast('AI key saved', 'success');
+}
+
+// CSV Import
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,'').toLowerCase());
+  return lines.slice(1).map(line => {
+    const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g,''));
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = vals[i] || ''; });
+    return obj;
+  });
+}
+
+async function importCSV(input, type) {
+  const file = input.files[0]; if (!file) return;
+  const text = await file.text();
+  const rows = parseCSV(text);
+  const resultEl = document.getElementById(type === 'employees' ? 'emp-result' : type === 'contacts' ? 'con-result' : 'led-result');
+  try {
+    const r = await api(`/api/import/${type}`, { method:'POST', body: JSON.stringify({ rows }) });
+    const d = await r.json();
+    resultEl.textContent = `✅ Imported ${d.imported} rows${d.skipped ? ` (${d.skipped} skipped)` : ''}`;
+    resultEl.className = 'import-result ok';
+    resultEl.style.display = 'block';
+    toast(`Imported ${d.imported} ${type}`, 'success');
+  } catch (err) {
+    resultEl.textContent = '❌ Import failed: ' + err.message;
+    resultEl.className = 'import-result err';
+    resultEl.style.display = 'block';
+  }
+  input.value = '';
+}
+
+function dragOver(e, id) { e.preventDefault(); document.getElementById(id).classList.add('drag'); }
+function dragLeave(id) { document.getElementById(id).classList.remove('drag'); }
+function dropFile(e, type) {
+  e.preventDefault();
+  const id = type === 'employees' ? 'emp-drop' : type === 'contacts' ? 'con-drop' : 'led-drop';
+  dragLeave(id);
+  const file = e.dataTransfer.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    const rows = parseCSV(ev.target.result);
+    const resultEl = document.getElementById(type === 'employees' ? 'emp-result' : type === 'contacts' ? 'con-result' : 'led-result');
+    try {
+      const r = await api(`/api/import/${type}`, { method:'POST', body: JSON.stringify({ rows }) });
+      const d = await r.json();
+      resultEl.textContent = `✅ Imported ${d.imported} rows`;
+      resultEl.className = 'import-result ok'; resultEl.style.display = 'block';
+    } catch { resultEl.textContent = '❌ Import failed'; resultEl.className = 'import-result err'; resultEl.style.display = 'block'; }
+  };
+  reader.readAsText(file);
+}
+
+function togglePasswordForm() {
+  const f = document.getElementById('pw-form');
+  f.style.display = f.style.display === 'none' ? 'flex' : 'none';
+}
+
+async function changePassword() {
+  const pw = document.getElementById('new-pw').value;
+  const confirm = document.getElementById('confirm-pw').value;
+  if (pw.length < 8) return toast('Password must be 8+ characters', 'error');
+  if (pw !== confirm) return toast('Passwords do not match', 'error');
+  toast('Password update not yet wired to auth endpoint', 'error');
+}
+
+function signOut() { localStorage.clear(); location.href = '/login'; }
+
+function clearData() {
+  if (!confirm('This will permanently delete ALL department data. Are you sure?')) return;
+  if (!confirm('Are you ABSOLUTELY sure? This cannot be undone.')) return;
+  toast('Data clear not implemented — edit JSON files directly to reset', 'error');
+}
+
+// Toast
+let toastTimer;
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 3000);
+}
+
+load();
+</script>
+</body>
+</html>

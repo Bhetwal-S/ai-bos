@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Environment variables (NEVER commit — set these in Railway dashboard)
+.env
+.env.local
+.env.production
+
+# Runtime data — never commit secrets or live state
+# Railway: mount a persistent volume at /app/knowledge in prod
+knowledge/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Claude Code local settings (may contain tokens)
+.claude/

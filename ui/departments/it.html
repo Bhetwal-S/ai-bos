@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI-BOS · IT & DevOps</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --accent: #378ADD; --accent2: #60a5fa; --bg: #06070b; --surface: #111318; --border: #1e2130; --text: #e2e8f0; --muted: #5a6480; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    body::before { content:''; position:fixed; inset:0; z-index:0; background: radial-gradient(ellipse 60% 40% at 20% 0%, rgba(55,138,221,0.12) 0%, transparent 70%); pointer-events:none; }
+  </style>
+  <link rel="stylesheet" href="/departments/dept.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="app">
+  <nav class="dept-nav">
+    <div class="dept-nav-left">
+      <a href="/dashboard" class="back-btn">← AI-BOS</a>
+      <div class="dept-badge" style="background:rgba(55,138,221,0.15);border-color:rgba(55,138,221,0.4);color:#378ADD">
+        ☁️ IT & DevOps
+      </div>
+      <span class="dept-subtitle">Nervous System · Infrastructure & Access</span>
+    </div>
+    <div class="dept-nav-right">
+      <a href="/war-room" class="war-room-btn">💬 War Room</a>
+      <div class="dept-links">
+        <a href="/department/finance">💰 Finance</a>
+        <a href="/department/hr">👥 HR</a>
+        <a href="/department/marketing">📣 Marketing</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="dept-main">
+    <!-- KPIs -->
+    <div class="kpi-row" id="kpi-row"></div>
+
+    <div class="dept-grid">
+      <!-- Ticket Queue -->
+      <div class="dept-card" style="grid-column: span 2">
+        <div class="card-header">
+          <div class="card-title">🎫 Ticketing Queue</div>
+          <button class="add-btn" onclick="openTicketModal()">+ New Ticket</button>
+        </div>
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="filterTickets('all',this)">All</button>
+          <button class="filter-btn" onclick="filterTickets('open',this)">Open</button>
+          <button class="filter-btn" onclick="filterTickets('in-progress',this)">In Progress</button>
+          <button class="filter-btn" onclick="filterTickets('closed',this)">Closed</button>
+        </div>
+        <div id="tickets-list" class="data-list"></div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="dept-card">
+        <div class="card-title" style="margin-bottom:14px">📊 Tickets by Priority</div>
+        <canvas id="chart-priority" height="180"></canvas>
+      </div>
+      <div class="dept-card">
+        <div class="card-title" style="margin-bottom:14px">📈 Tickets by Status</div>
+        <canvas id="chart-status" height="180"></canvas>
+      </div>
+
+      <!-- Agent Registry -->
+      <div class="dept-card">
+        <div class="card-header">
+          <div class="card-title">🤖 IAM Registry</div>
+          <button class="add-btn" onclick="openAgentModal()">+ Register</button>
+        </div>
+        <div id="registry-list" class="data-list"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Ticket Modal -->
+<div id="ticket-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-header"><span>New Ticket</span><button onclick="closeModal('ticket-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Title</label><input id="t-title" placeholder="Describe the issue"></div>
+      <div class="field-row">
+        <div class="field"><label>Priority</label>
+          <select id="t-priority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="critical">Critical</option></select>
+        </div>
+        <div class="field"><label>Type</label>
+          <select id="t-type"><option value="bug">Bug</option><option value="feature">Feature</option><option value="infra">Infra</option><option value="security">Security</option><option value="access">Access</option></select>
+        </div>
+      </div>
+      <div class="field"><label>Assignee</label><input id="t-assignee" placeholder="team member or agent"></div>
+      <div class="field"><label>Description</label><textarea id="t-desc" rows="3" placeholder="Details…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('ticket-modal')">Cancel</button>
+      <button class="btn-primary" onclick="createTicket()">Create Ticket</button>
+    </div>
+  </div>
+</div>
+
+<!-- Agent Modal -->
+<div id="agent-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-header"><span>Register Agent / User</span><button onclick="closeModal('agent-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Name</label><input id="a-name" placeholder="e.g. deploy-bot or Jane Smith"></div>
+      <div class="field"><label>Role</label><input id="a-role" placeholder="e.g. CI/CD Agent, DevOps Engineer"></div>
+      <div class="field"><label>Permissions (comma separated)</label><input id="a-perms" placeholder="read:logs, write:deploy, admin:infra"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('agent-modal')">Cancel</button>
+      <button class="btn-primary" onclick="createAgent()">Register</button>
+    </div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="/departments/dept.css">
+<script src="/departments/dept.js"></script>
+<script>
+const TOKEN = localStorage.getItem('aibos_token');
+if (!TOKEN) window.location.href = '/login';
+
+const PRIORITY_COLOR = { low:'#34d399', medium:'#f59e0b', high:'#f87171', critical:'#dc2626' };
+const STATUS_COLOR   = { open:'#5a6480', 'in-progress':'#378ADD', closed:'#34d399', blocked:'#f87171' };
+
+let allTickets = [], ticketFilter = 'all';
+
+async function load() {
+  const [tRes, rRes] = await Promise.all([
+    apiFetch('/api/it/tickets'),
+    apiFetch('/api/it/registry'),
+  ]);
+  allTickets = await tRes.json();
+  const registry = await rRes.json();
+  renderKPIs(allTickets, registry);
+  renderTickets();
+  renderRegistry(registry);
+  renderCharts(allTickets);
+}
+
+function renderKPIs(tickets, registry) {
+  const open   = tickets.filter(t => t.status === 'open').length;
+  const inprog = tickets.filter(t => t.status === 'in-progress').length;
+  const crit   = tickets.filter(t => t.priority === 'critical').length;
+  const active = registry.filter(a => a.status === 'active').length;
+  document.getElementById('kpi-row').innerHTML = [
+    { label:'Open Tickets',     value: open,   color:'#378ADD' },
+    { label:'In Progress',      value: inprog, color:'#f59e0b' },
+    { label:'Critical',         value: crit,   color:'#f87171' },
+    { label:'Active Agents/IAM',value: active, color:'#34d399' },
+  ].map(k => `<div class="kpi-card"><div class="kpi-val" style="color:${k.color}">${k.value}</div><div class="kpi-label">${k.label}</div></div>`).join('');
+}
+
+function filterTickets(status, btn) {
+  ticketFilter = status;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTickets();
+}
+
+function renderTickets() {
+  const filtered = ticketFilter === 'all' ? allTickets : allTickets.filter(t => t.status === ticketFilter);
+  document.getElementById('tickets-list').innerHTML = filtered.length ? filtered.map(t => `
+    <div class="list-row">
+      <div class="list-main">
+        <span class="badge" style="background:${PRIORITY_COLOR[t.priority]}22;color:${PRIORITY_COLOR[t.priority]};border-color:${PRIORITY_COLOR[t.priority]}44">${t.priority}</span>
+        <div>
+          <div class="list-title">${t.id} · ${t.title}</div>
+          ${t.assignee ? `<div class="list-sub">Assigned: ${t.assignee}</div>` : ''}
+        </div>
+      </div>
+      <div class="list-actions">
+        <select onchange="changeTicketStatus('${t.id}',this.value)" class="status-select" style="color:${STATUS_COLOR[t.status]||'#5a6480'}">
+          ${['open','in-progress','closed','blocked'].map(s => `<option value="${s}" ${s===t.status?'selected':''}>${s}</option>`).join('')}
+        </select>
+        <button class="del-btn" onclick="deleteTicket('${t.id}')">✕</button>
+      </div>
+    </div>`).join('') : '<div class="empty-state">No tickets · all clear 🎉</div>';
+}
+
+function renderRegistry(registry) {
+  document.getElementById('registry-list').innerHTML = registry.length ? registry.map(a => `
+    <div class="list-row">
+      <div class="list-main">
+        <div class="avatar-sm">${a.name[0].toUpperCase()}</div>
+        <div>
+          <div class="list-title">${a.name}</div>
+          <div class="list-sub">${a.role}</div>
+        </div>
+      </div>
+      <div class="list-actions">
+        <span class="badge" style="background:${a.status==='active'?'rgba(52,211,153,0.12)':'rgba(90,100,128,0.12)'};color:${a.status==='active'?'#34d399':'#5a6480'}">${a.status}</span>
+        <button onclick="toggleAgent('${a.id}','${a.status}')" class="icon-btn" title="Toggle">⟳</button>
+      </div>
+    </div>`).join('') : '<div class="empty-state">No agents registered</div>';
+}
+
+async function createTicket() {
+  const body = { title: v('t-title'), priority: v('t-priority'), type: v('t-type'), assignee: v('t-assignee'), description: v('t-desc') };
+  if (!body.title) return;
+  await apiFetch('/api/it/tickets', { method:'POST', body: JSON.stringify(body) });
+  closeModal('ticket-modal'); load();
+}
+
+async function deleteTicket(id) {
+  await apiFetch(`/api/it/tickets/${id}`, { method:'DELETE' }); load();
+}
+
+async function changeTicketStatus(id, status) {
+  await apiFetch(`/api/it/tickets/${id}`, { method:'PATCH', body: JSON.stringify({ status }) }); load();
+}
+
+async function createAgent() {
+  const perms = v('a-perms').split(',').map(s => s.trim()).filter(Boolean);
+  await apiFetch('/api/it/registry', { method:'POST', body: JSON.stringify({ name: v('a-name'), role: v('a-role'), permissions: perms }) });
+  closeModal('agent-modal'); load();
+}
+
+async function toggleAgent(id, status) {
+  await apiFetch(`/api/it/registry/${id}`, { method:'PATCH', body: JSON.stringify({ status: status==='active'?'inactive':'active' }) }); load();
+}
+
+function openTicketModal() { document.getElementById('ticket-modal').style.display='flex'; }
+function openAgentModal()  { document.getElementById('agent-modal').style.display='flex'; }
+
+function renderCharts(tickets) {
+  const byPriority = { low:0, medium:0, high:0, critical:0 };
+  const byStatus   = { open:0, 'in-progress':0, closed:0, blocked:0 };
+  tickets.forEach(t => { if (byPriority[t.priority]!==undefined) byPriority[t.priority]++; });
+  tickets.forEach(t => { if (byStatus[t.status]!==undefined) byStatus[t.status]++; });
+  const opts = (labels, data, colors) => ({
+    type:'doughnut', data:{ labels, datasets:[{ data, backgroundColor:colors.map(c=>c+'33'), borderColor:colors, borderWidth:2 }] },
+    options:{ responsive:true, plugins:{ legend:{ position:'bottom', labels:{ color:'#5a6480', font:{size:11}, padding:10 } } }, cutout:'65%' },
+  });
+  new Chart(document.getElementById('chart-priority'), opts(['Low','Medium','High','Critical'], Object.values(byPriority), ['#34d399','#f59e0b','#f87171','#dc2626']));
+  new Chart(document.getElementById('chart-status'),   opts(['Open','In Progress','Closed','Blocked'], Object.values(byStatus), ['#5a6480','#378ADD','#34d399','#f87171']));
+}
+
+load();
+</script>
+</body>
+</html>

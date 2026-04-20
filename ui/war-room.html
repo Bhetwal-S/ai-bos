@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI-BOS · War Room</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg: #06070b; --surface: #111318; --border: #1e2130; --text: #e2e8f0; --muted: #5a6480; --accent: #6366f1; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+    body::before { content:''; position:fixed; inset:0; z-index:0; background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(99,102,241,0.1) 0%, transparent 70%); pointer-events:none; }
+
+    .nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 24px; background: rgba(17,19,24,0.95);
+      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .nav-left { display: flex; align-items: center; gap: 12px; }
+    .nav-right { display: flex; align-items: center; gap: 8px; }
+    .back-btn {
+      color: var(--muted); text-decoration: none; font-size: 0.82rem;
+      padding: 6px 12px; border-radius: 7px; border: 1px solid var(--border); transition: all .2s;
+    }
+    .back-btn:hover { color: var(--text); border-color: #3a3f55; }
+    .badge-war {
+      font-size: 0.82rem; font-weight: 600; padding: 5px 12px;
+      border-radius: 20px; border: 1px solid rgba(99,102,241,0.4);
+      background: rgba(99,102,241,0.15); color: #818cf8;
+    }
+    .dept-links { display: flex; gap: 8px; }
+    .dept-links a {
+      font-size: 0.78rem; color: var(--muted); text-decoration: none;
+      padding: 5px 10px; border-radius: 6px; transition: all .2s;
+    }
+    .dept-links a:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+
+    .war-layout {
+      display: flex; flex: 1; height: calc(100vh - 53px); position: relative; z-index: 1;
+    }
+
+    /* THREAD LIST SIDEBAR */
+    .thread-sidebar {
+      width: 300px; flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      background: var(--surface);
+    }
+    .sidebar-header {
+      padding: 16px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .sidebar-title { font-weight: 600; font-size: 0.9rem; }
+    .new-thread-btn {
+      font-size: 0.75rem; padding: 5px 10px;
+      background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.35);
+      border-radius: 6px; color: #818cf8; cursor: pointer; transition: all .2s;
+    }
+    .new-thread-btn:hover { background: rgba(99,102,241,0.25); }
+    .thread-list { flex: 1; overflow-y: auto; }
+    .thread-item {
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background .15s;
+    }
+    .thread-item:hover { background: rgba(255,255,255,0.03); }
+    .thread-item.active { background: rgba(99,102,241,0.1); border-left: 2px solid #6366f1; }
+    .thread-subject { font-size: 0.84rem; font-weight: 500; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .thread-meta { font-size: 0.7rem; color: var(--muted); display: flex; gap: 8px; }
+    .priority-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
+
+    /* CHAT PANE */
+    .chat-pane {
+      flex: 1; display: flex; flex-direction: column;
+      min-width: 0;
+    }
+    .chat-header {
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      background: rgba(17,19,24,0.8); display: flex; align-items: center; justify-content: space-between;
+    }
+    .chat-subject { font-weight: 600; font-size: 0.95rem; }
+    .chat-meta { font-size: 0.73rem; color: var(--muted); margin-top: 3px; }
+    .messages-area {
+      flex: 1; overflow-y: auto; padding: 20px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .messages-area::-webkit-scrollbar { width: 4px; }
+    .messages-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .msg { display: flex; flex-direction: column; gap: 3px; }
+    .msg.human { align-items: flex-end; }
+    .msg.ai    { align-items: flex-start; }
+    .msg-from  { font-size: 0.68rem; color: var(--muted); padding: 0 4px; }
+    .msg-bubble {
+      max-width: 72%; padding: 10px 14px; border-radius: 14px;
+      font-size: 0.84rem; line-height: 1.55;
+    }
+    .msg.human .msg-bubble { background: rgba(99,102,241,0.18); border: 1px solid rgba(99,102,241,0.25); border-bottom-right-radius: 4px; }
+    .msg.ai    .msg-bubble { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+    .msg-time { font-size: 0.65rem; color: var(--muted); padding: 0 4px; }
+
+    .compose-area {
+      padding: 14px 20px; border-top: 1px solid var(--border);
+      background: rgba(17,19,24,0.8);
+    }
+    .compose-row { display: flex; gap: 10px; align-items: flex-end; }
+    .compose-input {
+      flex: 1; background: #0a0b0f; border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 14px;
+      font-size: 0.85rem; color: var(--text); outline: none;
+      resize: none; font-family: inherit; max-height: 120px;
+    }
+    .compose-input:focus { border-color: #6366f1; }
+    .compose-btns { display: flex; gap: 6px; }
+    .send-btn {
+      padding: 10px 18px; border-radius: 9px;
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      border: none; color: #fff; font-size: 0.83rem; font-weight: 600; cursor: pointer;
+      white-space: nowrap;
+    }
+    .ai-btn {
+      padding: 10px 14px; border-radius: 9px;
+      background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3);
+      color: #818cf8; font-size: 0.83rem; cursor: pointer; white-space: nowrap;
+    }
+    .ai-btn:hover { background: rgba(99,102,241,0.22); }
+
+    .empty-chat {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: var(--muted); gap: 12px; font-size: 0.85rem;
+    }
+    .empty-chat .icon { font-size: 3rem; opacity: 0.4; }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.65); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-box {
+      background: #13151c; border: 1px solid var(--border);
+      border-radius: 16px; width: 100%; max-width: 480px;
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px; border-bottom: 1px solid var(--border);
+      font-weight: 600; font-size: 0.93rem;
+    }
+    .modal-header button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; }
+    .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .modal-footer {
+      padding: 16px 20px; border-top: 1px solid var(--border);
+      display: flex; justify-content: flex-end; gap: 10px;
+    }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 0.73rem; color: var(--muted); font-weight: 500; }
+    .field input, .field select, .field textarea {
+      background: #0a0b0f; border: 1px solid var(--border); border-radius: 8px;
+      padding: 9px 12px; font-size: 0.85rem; color: var(--text); outline: none;
+      transition: border-color .2s; font-family: inherit;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: #6366f1; }
+    .btn-cancel {
+      padding: 9px 18px; border-radius: 8px; background: transparent;
+      border: 1px solid var(--border); color: var(--muted); cursor: pointer; font-size: 0.83rem;
+    }
+    .btn-primary {
+      padding: 9px 18px; border-radius: 8px;
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      border: none; color: #fff; cursor: pointer; font-size: 0.83rem; font-weight: 600;
+    }
+    .ai-thinking { color: var(--muted); font-style: italic; font-size: 0.8rem; padding: 8px 0; }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-left">
+    <a href="/dashboard" class="back-btn">← AI-BOS</a>
+    <div class="badge-war">💬 War Room</div>
+    <span style="font-size:0.75rem;color:var(--muted)">Cross-department Command Center</span>
+  </div>
+  <div class="nav-right">
+    <div class="dept-links">
+      <a href="/department/it">☁️ IT</a>
+      <a href="/department/finance">💰 Finance</a>
+      <a href="/department/hr">👥 HR</a>
+      <a href="/department/marketing">📣 Marketing</a>
+    </div>
+  </div>
+</nav>
+
+<div class="war-layout">
+  <!-- Sidebar -->
+  <div class="thread-sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">Threads</span>
+      <button class="new-thread-btn" onclick="openNewThread()">+ New Thread</button>
+    </div>
+    <div class="thread-list" id="thread-list"></div>
+  </div>
+
+  <!-- Chat Pane -->
+  <div class="chat-pane" id="chat-pane">
+    <div class="empty-chat">
+      <div class="icon">💬</div>
+      <div>Select a thread or start a new one</div>
+    </div>
+  </div>
+</div>
+
+<!-- New Thread Modal -->
+<div id="new-thread-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-header"><span>New Thread</span><button onclick="document.getElementById('new-thread-modal').style.display='none'">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Subject</label><input id="th-subject" placeholder="What's this about?"></div>
+      <div class="field"><label>From (your name / dept)</label><input id="th-from" placeholder="e.g. Marketing Team"></div>
+      <div class="field"><label>To</label>
+        <select id="th-to">
+          <option value="all">All Departments</option>
+          <option value="it">IT & DevOps</option>
+          <option value="finance">Finance</option>
+          <option value="hr">HR</option>
+          <option value="marketing">Marketing</option>
+        </select>
+      </div>
+      <div class="field"><label>Priority</label>
+        <select id="th-priority">
+          <option value="normal">Normal</option>
+          <option value="high">High</option>
+          <option value="urgent">Urgent</option>
+        </select>
+      </div>
+      <div class="field"><label>Opening Message</label><textarea id="th-body" rows="3" placeholder="Describe the situation…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="document.getElementById('new-thread-modal').style.display='none'">Cancel</button>
+      <button class="btn-primary" onclick="createThread()">Open Thread</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOKEN = localStorage.getItem('aibos_token');
+const WS_ID = localStorage.getItem('aibos_workspace') || 'default';
+if (!TOKEN) window.location.href = '/login';
+
+const USER = JSON.parse(localStorage.getItem('aibos_user') || '{}');
+let threads = [], activeThread = null;
+
+async function apiFetch(url, opts = {}) {
+  const res = await fetch(url, {
+    ...opts,
+    headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${TOKEN}`, 'x-workspace-id': WS_ID, ...(opts.headers||{}) },
+  });
+  if (res.status === 401) window.location.href = '/login';
+  return res;
+}
+
+const PRIORITY_DOT = { normal:'#5a6480', high:'#f59e0b', urgent:'#f87171' };
+
+function formatTimeAgo(iso) {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h/24)}d ago`;
+}
+
+async function loadThreads() {
+  const res = await apiFetch('/api/war-room/threads');
+  threads = await res.json();
+  renderThreadList();
+  if (activeThread) {
+    const updated = threads.find(t => t.id === activeThread.id);
+    if (updated) { activeThread = updated; renderChat(); }
+  }
+}
+
+function renderThreadList() {
+  const list = document.getElementById('thread-list');
+  list.innerHTML = threads.length ? threads.map(t => `
+    <div class="thread-item ${activeThread?.id === t.id ? 'active' : ''}" onclick="selectThread('${t.id}')">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <div class="priority-dot" style="background:${PRIORITY_DOT[t.priority]||'#5a6480'}"></div>
+        <div class="thread-subject">${t.subject}</div>
+      </div>
+      <div class="thread-meta">
+        <span>${t.from}</span>
+        <span>→ ${t.to}</span>
+        <span>${formatTimeAgo(t.lastActivity)}</span>
+        <span>${t.messages.length} msg${t.messages.length!==1?'s':''}</span>
+      </div>
+    </div>`).join('') : '<div style="padding:24px;text-align:center;color:#5a6480;font-size:0.82rem">No threads yet</div>';
+}
+
+function selectThread(id) {
+  activeThread = threads.find(t => t.id === id);
+  renderThreadList();
+  renderChat();
+}
+
+function renderChat() {
+  if (!activeThread) return;
+  const pane = document.getElementById('chat-pane');
+  pane.innerHTML = `
+    <div class="chat-header">
+      <div>
+        <div class="chat-subject">${activeThread.subject}</div>
+        <div class="chat-meta">${activeThread.from} → ${activeThread.to} · ${activeThread.messages.length} messages</div>
+      </div>
+      <button onclick="deleteThread('${activeThread.id}')" style="background:none;border:none;color:#5a6480;cursor:pointer;font-size:0.8rem">Delete thread</button>
+    </div>
+    <div class="messages-area" id="messages-area">
+      ${activeThread.messages.map(m => `
+        <div class="msg ${m.type||'human'}">
+          <div class="msg-from">${m.from}</div>
+          <div class="msg-bubble">${m.body.replace(/\n/g,'<br>')}</div>
+          <div class="msg-time">${formatTimeAgo(m.timestamp)}</div>
+        </div>`).join('')}
+    </div>
+    <div class="compose-area">
+      <div class="compose-row">
+        <textarea class="compose-input" id="compose-input" rows="1" placeholder="Type a message…"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"
+          oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+        <div class="compose-btns">
+          <button class="ai-btn" onclick="askAI()">🤖 Ask AI</button>
+          <button class="send-btn" onclick="sendMessage()">Send →</button>
+        </div>
+      </div>
+    </div>`;
+  scrollToBottom();
+}
+
+function scrollToBottom() {
+  const area = document.getElementById('messages-area');
+  if (area) area.scrollTop = area.scrollHeight;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('compose-input');
+  const body = input.value.trim();
+  if (!body || !activeThread) return;
+  input.value = ''; input.style.height = 'auto';
+  await apiFetch(`/api/war-room/threads/${activeThread.id}/messages`, {
+    method: 'POST',
+    body: JSON.stringify({ from: USER.name || 'You', body }),
+  });
+  await loadThreads();
+  scrollToBottom();
+}
+
+async function askAI() {
+  if (!activeThread) return;
+  const area = document.getElementById('messages-area');
+  if (!area) return;
+  const thinking = document.createElement('div');
+  thinking.className = 'ai-thinking'; thinking.textContent = '🤖 AI is thinking…';
+  area.appendChild(thinking); scrollToBottom();
+  await apiFetch(`/api/war-room/threads/${activeThread.id}/ai`, { method: 'POST' });
+  await loadThreads();
+}
+
+async function createThread() {
+  const body = { subject: document.getElementById('th-subject').value.trim(), from: document.getElementById('th-from').value.trim(), to: document.getElementById('th-to').value, priority: document.getElementById('th-priority').value, body: document.getElementById('th-body').value.trim() };
+  if (!body.subject || !body.from || !body.body) return;
+  const res = await apiFetch('/api/war-room/threads', { method:'POST', body: JSON.stringify(body) });
+  const thread = await res.json();
+  document.getElementById('new-thread-modal').style.display = 'none';
+  await loadThreads();
+  selectThread(thread.id);
+}
+
+async function deleteThread(id) {
+  if (!confirm('Delete this thread?')) return;
+  await apiFetch(`/api/war-room/threads/${id}`, { method:'DELETE' });
+  activeThread = null;
+  document.getElementById('chat-pane').innerHTML = '<div class="empty-chat"><div class="icon">💬</div><div>Select a thread or start a new one</div></div>';
+  loadThreads();
+}
+
+function openNewThread() { document.getElementById('new-thread-modal').style.display='flex'; }
+
+loadThreads();
+setInterval(loadThreads, 15000);
+</script>
+</body>
+</html>

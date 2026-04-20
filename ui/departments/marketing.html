@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI-BOS · Marketing & Growth</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg: #06070b; --surface: #111318; --border: #1e2130; --text: #e2e8f0; --muted: #5a6480; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    body::before { content:''; position:fixed; inset:0; z-index:0; background: radial-gradient(ellipse 60% 40% at 30% 0%, rgba(251,146,60,0.1) 0%, transparent 70%); pointer-events:none; }
+  </style>
+  <link rel="stylesheet" href="/departments/dept.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="app">
+  <nav class="dept-nav">
+    <div class="dept-nav-left">
+      <a href="/dashboard" class="back-btn">← AI-BOS</a>
+      <div class="dept-badge" style="background:rgba(251,146,60,0.15);border-color:rgba(251,146,60,0.4);color:#fb923c">
+        📣 Marketing & Growth
+      </div>
+      <span class="dept-subtitle">Campaigns · Content · Leads</span>
+    </div>
+    <div class="dept-nav-right">
+      <a href="/war-room" class="war-room-btn">💬 War Room</a>
+      <div class="dept-links">
+        <a href="/department/it">☁️ IT</a>
+        <a href="/department/finance">💰 Finance</a>
+        <a href="/department/hr">👥 HR</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="dept-main">
+    <div class="kpi-row" id="kpi-row"></div>
+
+    <div class="dept-grid">
+      <!-- Campaigns -->
+      <div class="dept-card">
+        <div class="card-header">
+          <div class="card-title">🚀 Campaigns</div>
+          <button class="add-btn" onclick="openCampaignModal()">+ New Campaign</button>
+        </div>
+        <div id="campaigns-list" class="data-list"></div>
+      </div>
+
+      <!-- Charts -->
+      <div class="dept-card" style="grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div>
+          <div class="card-title" style="margin-bottom:14px">🚀 Campaigns by Status</div>
+          <canvas id="chart-camps" height="160"></canvas>
+        </div>
+        <div>
+          <div class="card-title" style="margin-bottom:14px">📝 Content by Type</div>
+          <canvas id="chart-content" height="160"></canvas>
+        </div>
+      </div>
+
+      <!-- Content Archive -->
+      <div class="dept-card">
+        <div class="card-header">
+          <div class="card-title">📝 Content Archive</div>
+          <div style="display:flex;gap:6px">
+            <button class="filter-btn active" onclick="filterContent('all',this)">All</button>
+            <button class="filter-btn" onclick="filterContent('draft',this)">Draft</button>
+            <button class="filter-btn" onclick="filterContent('published',this)">Published</button>
+            <button class="add-btn" onclick="openContentModal()">+ Create</button>
+          </div>
+        </div>
+        <div id="content-list" class="data-list"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Campaign Modal -->
+<div id="campaign-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-header"><span>New Campaign</span><button onclick="closeModal('campaign-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Campaign Name</label><input id="c-name" placeholder="e.g. Q2 Product Launch"></div>
+      <div class="field"><label>Goal</label><input id="c-goal" placeholder="e.g. 500 leads, 10% conversion"></div>
+      <div class="field"><label>Budget ($)</label><input id="c-budget" type="number" min="0" placeholder="0"></div>
+      <div class="field-row">
+        <div class="field"><label>Start Date</label><input id="c-start" type="date"></div>
+        <div class="field"><label>End Date</label><input id="c-end" type="date"></div>
+      </div>
+      <div class="field"><label>Channels (comma separated)</label><input id="c-channels" placeholder="email, linkedin, twitter"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('campaign-modal')">Cancel</button>
+      <button class="btn-primary" onclick="createCampaign()">Launch Campaign</button>
+    </div>
+  </div>
+</div>
+
+<!-- Content Modal -->
+<div id="content-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-header"><span>Create Content</span><button onclick="closeModal('content-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Title</label><input id="ct-title" placeholder="Content title"></div>
+      <div class="field-row">
+        <div class="field"><label>Type</label>
+          <select id="ct-type"><option value="blog">Blog</option><option value="social">Social</option><option value="email">Email</option><option value="video">Video</option><option value="ad">Ad</option></select>
+        </div>
+        <div class="field"><label>Channel</label>
+          <input id="ct-channel" placeholder="e.g. Twitter, Newsletter">
+        </div>
+      </div>
+      <div class="field"><label>Body / Copy</label><textarea id="ct-body" rows="4" placeholder="Content body…"></textarea></div>
+      <div class="field"><label>Tags (comma separated)</label><input id="ct-tags" placeholder="launch, product, q2"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('content-modal')">Cancel</button>
+      <button class="btn-primary" onclick="createContent()">Save Draft</button>
+    </div>
+  </div>
+</div>
+
+<script src="/departments/dept.js"></script>
+<script>
+if (!localStorage.getItem('aibos_token')) window.location.href = '/login';
+
+const CAMP_COLOR = { planning:'#5a6480', active:'#34d399', paused:'#f59e0b', completed:'#60a5fa' };
+const CONT_COLOR = { draft:'#5a6480', published:'#34d399', archived:'#f87171' };
+let allContent = [], contentFilter = 'all';
+
+async function load() {
+  const [campRes, contRes] = await Promise.all([
+    apiFetch('/api/marketing/campaigns'),
+    apiFetch('/api/marketing/content'),
+  ]);
+  const campaigns = await campRes.json();
+  allContent = await contRes.json();
+  renderKPIs(campaigns, allContent);
+  renderCampaigns(campaigns);
+  renderContent();
+  renderCharts(campaigns, allContent);
+}
+
+function renderKPIs(campaigns, content) {
+  const active = campaigns.filter(c => c.status === 'active').length;
+  const leads   = campaigns.reduce((s, c) => s + (c.leads || 0), 0);
+  const budget  = campaigns.reduce((s, c) => s + (c.budget || 0), 0);
+  const published = content.filter(c => c.status === 'published').length;
+  document.getElementById('kpi-row').innerHTML = [
+    { label:'Active Campaigns', value: active, color:'#fb923c' },
+    { label:'Total Leads',      value: leads,  color:'#34d399' },
+    { label:'Total Budget',     value: formatCurrency(budget), color:'#f59e0b' },
+    { label:'Published Content',value: published, color:'#60a5fa' },
+  ].map(k => `<div class="kpi-card"><div class="kpi-val" style="color:${k.color};font-size:${typeof k.value==='string'?'1.3rem':'2rem'}">${k.value}</div><div class="kpi-label">${k.label}</div></div>`).join('');
+}
+
+function renderCampaigns(campaigns) {
+  document.getElementById('campaigns-list').innerHTML = campaigns.length ? campaigns.map(c => `
+    <div class="list-row">
+      <div class="list-main">
+        <div>
+          <div class="list-title">${c.name}</div>
+          <div class="list-sub">${c.goal} · ${c.channels.join(', ') || 'no channels'}</div>
+        </div>
+      </div>
+      <div class="list-actions">
+        <span style="font-size:0.75rem;color:#5a6480">${c.leads} leads</span>
+        <select onchange="changeCampaignStatus('${c.id}',this.value)" class="status-select" style="color:${CAMP_COLOR[c.status]||'#5a6480'}">
+          ${['planning','active','paused','completed'].map(s => `<option value="${s}" ${s===c.status?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+    </div>`).join('') : '<div class="empty-state">No campaigns yet</div>';
+}
+
+function filterContent(status, btn) {
+  contentFilter = status;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderContent();
+}
+
+function renderContent() {
+  const items = contentFilter === 'all' ? allContent : allContent.filter(c => c.status === contentFilter);
+  document.getElementById('content-list').innerHTML = items.length ? items.map(c => `
+    <div class="list-row">
+      <div class="list-main">
+        <div>
+          <div class="list-title">${c.title}</div>
+          <div class="list-sub">${c.type} · ${c.channel} · ${formatTimeAgo(c.created)}</div>
+        </div>
+      </div>
+      <div class="list-actions">
+        <span class="badge" style="background:${CONT_COLOR[c.status]}22;color:${CONT_COLOR[c.status]};border-color:${CONT_COLOR[c.status]}44">${c.status}</span>
+        <button onclick="publishContent('${c.id}','${c.status}')" class="icon-btn" title="Toggle publish">⟳</button>
+        <button class="del-btn" onclick="deleteContent('${c.id}')">✕</button>
+      </div>
+    </div>`).join('') : '<div class="empty-state">No content yet</div>';
+}
+
+async function createCampaign() {
+  const channels = v('c-channels').split(',').map(s=>s.trim()).filter(Boolean);
+  const body = { name: v('c-name'), goal: v('c-goal'), budget: parseFloat(v('c-budget'))||0, channels, startDate: v('c-start'), endDate: v('c-end') };
+  if (!body.name) return;
+  await apiFetch('/api/marketing/campaigns', { method:'POST', body: JSON.stringify(body) });
+  closeModal('campaign-modal'); load();
+}
+
+async function changeCampaignStatus(id, status) {
+  await apiFetch(`/api/marketing/campaigns/${id}`, { method:'PATCH', body: JSON.stringify({ status }) }); load();
+}
+
+async function createContent() {
+  const tags = v('ct-tags').split(',').map(s=>s.trim()).filter(Boolean);
+  const body = { title: v('ct-title'), type: v('ct-type'), channel: v('ct-channel'), body: v('ct-body'), tags };
+  if (!body.title) return;
+  await apiFetch('/api/marketing/content', { method:'POST', body: JSON.stringify(body) });
+  closeModal('content-modal'); load();
+}
+
+async function publishContent(id, status) {
+  const next = status === 'published' ? 'draft' : 'published';
+  await apiFetch(`/api/marketing/content/${id}`, { method:'PATCH', body: JSON.stringify({ status: next }) }); load();
+}
+
+async function deleteContent(id) {
+  await apiFetch(`/api/marketing/content/${id}`, { method:'DELETE' }); load();
+}
+
+function openCampaignModal() { document.getElementById('campaign-modal').style.display='flex'; }
+function openContentModal()  { document.getElementById('content-modal').style.display='flex'; }
+
+function renderCharts(campaigns, content) {
+  const statusMap = { planning:0, active:0, paused:0, completed:0 };
+  campaigns.forEach(c => { if (statusMap[c.status]!==undefined) statusMap[c.status]++; });
+  new Chart(document.getElementById('chart-camps'), {
+    type:'doughnut',
+    data:{ labels:['Planning','Active','Paused','Completed'], datasets:[{ data:Object.values(statusMap), backgroundColor:['#5a648033','#34d39933','#f59e0b33','#60a5fa33'], borderColor:['#5a6480','#34d399','#f59e0b','#60a5fa'], borderWidth:2 }] },
+    options:{ responsive:true, plugins:{ legend:{ position:'bottom', labels:{ color:'#5a6480', font:{size:10}, padding:8 } } }, cutout:'60%' },
+  });
+  const typeMap = {};
+  content.forEach(c => { typeMap[c.type]=(typeMap[c.type]||0)+1; });
+  const types = Object.entries(typeMap);
+  const COLORS = ['#fb923c','#f59e0b','#60a5fa','#a78bfa','#34d399'];
+  new Chart(document.getElementById('chart-content'), {
+    type:'bar',
+    data:{ labels:types.map(t=>t[0]), datasets:[{ data:types.map(t=>t[1]), backgroundColor:COLORS.map(c=>c+'33'), borderColor:COLORS, borderWidth:2, borderRadius:6 }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ x:{grid:{color:'#1e2130'},ticks:{color:'#5a6480',font:{size:11}}}, y:{grid:{color:'#1e2130'},ticks:{color:'#5a6480',stepSize:1}} } },
+  });
+}
+
+load();
+</script>
+</body>
+</html>

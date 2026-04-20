@@ -1,0 +1,426 @@
+[
+  {
+    "record_id": "83b80427-5201-45c5-9c40-7fa4811ef9ad",
+    "timestamp": "2026-04-18T10:39:25.609Z",
+    "type": "context",
+    "agent_source": "ceo",
+    "text": "CEO command received: Launch IT portal proposal to HR to integrate with dummy staff accounts",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "1e5dfa67-132b-41b4-a53f-67e6523137fe",
+    "timestamp": "2026-04-18T10:39:44.414Z",
+    "type": "outcome",
+    "agent_source": "hr",
+    "text": "hr output: ## Immediate Hiring Plan\n\n**Critical Role: IT Integration Specialist**\n- Requirements: 3+ years HRIS experience, API int",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "fa2565ae-6dc5-4af1-9c71-cece1f75f82a",
+    "timestamp": "2026-04-18T10:39:51.541Z",
+    "type": "outcome",
+    "agent_source": "marketing",
+    "text": "marketing output: **Campaign Strategy:**\nPosition our AI Business OS as the seamless bridge between IT infrastructure and HR operations, t",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "2a49db37-aa71-4780-9c52-3a60f6339040",
+    "timestamp": "2026-04-18T10:39:59.116Z",
+    "type": "outcome",
+    "agent_source": "finance",
+    "text": "finance output: ## Financial Analysis: IT Portal Integration Project\n\n**Cost Breakdown:**\n- Portal development/customization: $45,000-65",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "c2014936-c503-44a2-ada0-20ff99304222",
+    "timestamp": "2026-04-18T10:40:07.524Z",
+    "type": "decision",
+    "agent_source": "orchestrator",
+    "text": "Command executed: Launch IT portal proposal to HR to integrate with dummy staff accounts",
+    "detail": {
+      "sessionId": "9298c1f6-d4ab-463a-95b6-d3efe913fb87"
+    },
+    "status": "active"
+  },
+  {
+    "record_id": "f12234da-1fee-44ab-9b41-d0e828e07ddb",
+    "timestamp": "2026-04-18T10:40:07.525Z",
+    "type": "project",
+    "agent_source": "orchestrator",
+    "text": "Active project: Launch IT portal proposal to HR to integrate with dummy staff accounts",
+    "detail": {
+      "sessionId": "9298c1f6-d4ab-463a-95b6-d3efe913fb87"
+    },
+    "status": "active"
+  },
+  {
+    "record_id": "44dd2cf1-3a79-4345-8741-57f2ebd59c79",
+    "timestamp": "2026-04-18T10:41:29.580Z",
+    "type": "context",
+    "agent_source": "ceo",
+    "text": "CEO command received: Create 1000 dummy users with all the required properties in HR directory for us to fetch later",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "4bead0d2-141b-4013-ab09-efb2296b3fb3",
+    "timestamp": "2026-04-18T10:41:49.012Z",
+    "type": "outcome",
+    "agent_source": "hr",
+    "text": "hr output: ## Immediate Hiring Plan\n\n**Critical Role: HRIS Data Engineer**\n- Requirements: 3+ years with HR systems (Workday/Bamboo",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "1a9133ed-f97e-428c-b203-4c6e84a8786b",
+    "timestamp": "2026-04-18T10:41:55.727Z",
+    "type": "outcome",
+    "agent_source": "finance",
+    "text": "finance output: ## Financial Analysis: HR Directory Dummy User Creation\n\n**Cost Breakdown:**\n- Database setup/configuration: $2,500\n- Da",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "9260a1ab-2ee9-49b2-8d90-caa8edeadf40",
+    "timestamp": "2026-04-18T10:42:04.866Z",
+    "type": "decision",
+    "agent_source": "orchestrator",
+    "text": "Command executed: Create 1000 dummy users with all the required properties in HR directory for us to fetch later",
+    "detail": {
+      "sessionId": "48b9ec66-7530-4924-8d13-4cf7479b3c15"
+    },
+    "status": "active"
+  },
+  {
+    "record_id": "124133d9-72be-43ed-ab5f-aa3776af725c",
+    "timestamp": "2026-04-18T10:43:27.894Z",
+    "type": "context",
+    "agent_source": "ceo",
+    "text": "CEO command received: Create 1000 dummy users with all the required properties in HR directory for us to fetch later",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "e471d947-40dd-4d70-9760-dea1a4f497fc",
+    "timestamp": "2026-04-18T10:43:47.716Z",
+    "type": "outcome",
+    "agent_source": "hr",
+    "text": "hr output: ## HR Execution Plan: Dummy User Database Creation\n\n**Critical Role: HRIS Data Architect**\n- Requirements: 5+ years HRIS",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "b21d0fd2-19a1-406b-a676-c1beac8d27f1",
+    "timestamp": "2026-04-18T10:43:54.349Z",
+    "type": "outcome",
+    "agent_source": "finance",
+    "text": "finance output: ## Financial Analysis: HR Directory Dummy User Creation\n\n**Cost Breakdown:**\n- Database setup/configuration: $2,500\n- Da",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "60028659-04bc-459a-8000-85cb150c7ba3",
+    "timestamp": "2026-04-18T10:44:03.364Z",
+    "type": "decision",
+    "agent_source": "orchestrator",
+    "text": "Command executed: Create 1000 dummy users with all the required properties in HR directory for us to fetch later",
+    "detail": {
+      "sessionId": "a75fae0c-b8cc-41b8-9811-0a7e0cc4876a"
+    },
+    "status": "active"
+  },
+  {
+    "record_id": "0cfddc7a-2e36-4898-81d7-5de4ba26ad9f",
+    "timestamp": "2026-04-18T10:51:26.556Z",
+    "type": "context",
+    "agent_source": "ceo",
+    "text": "CEO command received: Hire a founding engineering team of 5 people",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "961707e1-de1b-494b-87a2-ee5d3a63bac2",
+    "timestamp": "2026-04-18T10:51:47.279Z",
+    "type": "outcome",
+    "agent_source": "hr",
+    "text": "hr output: ## Founding Engineering Team - 5 Roles\n\n**IMMEDIATE HIRES (Week 1-2):**\n- **Lead Backend Engineer**: 7+ years, microserv",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "11d2e1c2-c0bc-41d9-a252-a3431118f1f7",
+    "timestamp": "2026-04-18T10:51:55.641Z",
+    "type": "decision",
+    "agent_source": "orchestrator",
+    "text": "Command executed: Hire a founding engineering team of 5 people",
+    "detail": {
+      "sessionId": "4956a5fe-b0b3-4417-b159-830c7e25a992"
+    },
+    "status": "active"
+  },
+  {
+    "record_id": "6bf26587-5db3-475d-ae6e-31c8cb87b76a",
+    "timestamp": "2026-04-18T11:03:56.388Z",
+    "type": "context",
+    "agent_source": "ceo",
+    "text": "CEO command received: Launch a B2B SaaS product for HR teams in 90 days",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "5212ad6a-eeff-4297-b44f-eaa1d7d1b767",
+    "timestamp": "2026-04-18T11:04:18.827Z",
+    "type": "outcome",
+    "agent_source": "hr",
+    "text": "hr output: ## HR Execution Plan: B2B SaaS HR Product Launch\n\n**CRITICAL ROLES (Hire immediately - Week 1-2):**\n- **Product Manager*",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "34e0f177-8253-4877-ad31-020ace3d2edb",
+    "timestamp": "2026-04-18T11:04:18.827Z",
+    "type": "outcome",
+    "agent_source": "marketing",
+    "text": "marketing output: ## 90-Day B2B SaaS Launch Strategy\n\n**POSITIONING:** \"The AI-powered HR Operating System that automates repetitive tasks",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "19c3fb89-0aec-4d2d-bd10-695a73923be0",
+    "timestamp": "2026-04-18T11:04:26.464Z",
+    "type": "outcome",
+    "agent_source": "finance",
+    "text": "finance output: ## Financial Analysis: B2B HR SaaS Launch (90 Days)\n\n**Cost Breakdown:**\n- Development (5 engineers @ $120K avg): $45,00",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "1dbec3c4-faf1-42ee-90fb-e198beb54be6",
+    "timestamp": "2026-04-18T11:04:26.465Z",
+    "type": "contradiction",
+    "agent_source": "memory",
+    "text": "Duplicate launch detected: 1 prior launch project(s) in memory. Confirm this is a new initiative, not a duplicate.",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "5f1ea58c-49ae-4559-b0b9-9d8e0105cb03",
+    "timestamp": "2026-04-18T11:04:35.437Z",
+    "type": "decision",
+    "agent_source": "orchestrator",
+    "text": "Command executed: Launch a B2B SaaS product for HR teams in 90 days",
+    "detail": {
+      "sessionId": "d4eeeab8-1e26-4a70-a51e-ac6baf8d68f9"
+    },
+    "status": "active"
+  },
+  {
+    "record_id": "2f19cc9b-cd7a-469d-ae6b-3e4f55d3ca74",
+    "timestamp": "2026-04-18T11:04:35.438Z",
+    "type": "project",
+    "agent_source": "orchestrator",
+    "text": "Active project: Launch a B2B SaaS product for HR teams in 90 days",
+    "detail": {
+      "sessionId": "d4eeeab8-1e26-4a70-a51e-ac6baf8d68f9"
+    },
+    "status": "active"
+  },
+  {
+    "record_id": "49f2c4f3-ccc7-4efa-90ad-fde20a0e00ad",
+    "timestamp": "2026-04-18T11:16:55.027Z",
+    "type": "context",
+    "agent_source": "ceo",
+    "text": "CEO command received: Build a secure API backend with authentication",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "d0e4ee34-a87d-4fd3-a9a1-6edc8217f3b8",
+    "timestamp": "2026-04-18T11:17:11.186Z",
+    "type": "outcome",
+    "agent_source": "architect",
+    "text": "architect output: **System Design Decision:**\nFastAPI + PostgreSQL + Redis + JWT authentication. Deploy on AWS ECS Fargate with RDS and El",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "214b0faa-1e29-4fdf-a571-9dba1b15c69b",
+    "timestamp": "2026-04-18T11:17:11.187Z",
+    "type": "outcome",
+    "agent_source": "security",
+    "text": "security output: **TOP 3 THREAT VECTORS:**\n1. Exposed API keys in client-side code during rushed 90-day development\n2. Weak JWT token val",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "b4569ef6-fc3d-46f3-acae-c695cd8cd4ea",
+    "timestamp": "2026-04-18T11:17:16.955Z",
+    "type": "outcome",
+    "agent_source": "finance",
+    "text": "finance output: **SECURE API BACKEND - FINANCIAL BREAKDOWN**\n\n**COST BREAKDOWN:**\n- Senior Backend Dev (3 months): $45K\n- Security audit",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "c890ee38-788c-4121-a5bd-1189cdadaa59",
+    "timestamp": "2026-04-18T11:17:26.670Z",
+    "type": "decision",
+    "agent_source": "orchestrator",
+    "text": "Command executed: Build a secure API backend with authentication",
+    "detail": {
+      "sessionId": "1aa5457b-eb6b-49d7-aed2-be5f2f9bace0"
+    },
+    "status": "active"
+  },
+  {
+    "record_id": "fbaf5b5e-872c-402a-825c-0ad411a1a863",
+    "timestamp": "2026-04-18T11:17:26.671Z",
+    "type": "project",
+    "agent_source": "orchestrator",
+    "text": "Active project: Build a secure API backend with authentication",
+    "detail": {
+      "sessionId": "1aa5457b-eb6b-49d7-aed2-be5f2f9bace0"
+    },
+    "status": "active"
+  },
+  {
+    "record_id": "565e5b87-793f-4b7d-9735-ed02231ac33d",
+    "timestamp": "2026-04-18T11:19:54.584Z",
+    "type": "context",
+    "agent_source": "ceo",
+    "text": "CEO command received: test building HR Portal",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "1d5fbbc0-40f4-470e-9428-7b7c6f7bb7ca",
+    "timestamp": "2026-04-18T11:20:09.359Z",
+    "type": "outcome",
+    "agent_source": "hr",
+    "text": "hr output: **ROLES NEEDED:**\n- **Senior Full-Stack Developer** (React/Node.js, SOC2 experience, API security)\n- **QA/Compliance Spe",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "f490bab6-c8ff-4d5d-9a82-69096b2aa212",
+    "timestamp": "2026-04-18T11:20:15.061Z",
+    "type": "outcome",
+    "agent_source": "finance",
+    "text": "finance output: **HR PORTAL - FINANCIAL BREAKDOWN**\n\n**COST BREAKDOWN:**\n- Backend Dev (3mo): $45K\n- AWS Infrastructure: $18K/90 days  \n",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "30cf9319-3d19-41bc-bc57-7060aed979c9",
+    "timestamp": "2026-04-18T11:20:22.508Z",
+    "type": "decision",
+    "agent_source": "orchestrator",
+    "text": "Command executed: test building HR Portal",
+    "detail": {
+      "sessionId": "435a941e-c982-41af-a9f6-8fef48825f96"
+    },
+    "status": "active"
+  },
+  {
+    "record_id": "573b10e4-35e5-4896-ab87-e8a1257c4326",
+    "timestamp": "2026-04-18T11:20:22.508Z",
+    "type": "project",
+    "agent_source": "orchestrator",
+    "text": "Active project: test building HR Portal",
+    "detail": {
+      "sessionId": "435a941e-c982-41af-a9f6-8fef48825f96"
+    },
+    "status": "active"
+  },
+  {
+    "record_id": "99dd963c-ace1-47a8-bf19-f3eacae2857d",
+    "timestamp": "2026-04-19T01:00:50.903Z",
+    "type": "context",
+    "agent_source": "ceo",
+    "text": "CEO command received: Build a secure API backend",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "cc10e916-cdda-4a12-b25c-47ee9fdb70db",
+    "timestamp": "2026-04-19T01:01:09.943Z",
+    "type": "outcome",
+    "agent_source": "architect",
+    "text": "architect output: **System Design Decision:**\nFastAPI + PostgreSQL + Redis architecture on AWS ECS with multi-layer security.\n\n**Tech Stac",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "ee8c329e-70c8-4ce3-9262-cca5c7c232d8",
+    "timestamp": "2026-04-19T01:01:09.944Z",
+    "type": "outcome",
+    "agent_source": "security",
+    "text": "security output: **TOP 3 THREAT VECTORS:**\n1. Unsecured API endpoints exposing customer PII during rapid development\n2. Insufficient auth",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "01bbab2e-a142-460f-998f-a113307605f4",
+    "timestamp": "2026-04-19T01:01:15.260Z",
+    "type": "outcome",
+    "agent_source": "finance",
+    "text": "finance output: **SECURE API BACKEND - COST BREAKDOWN**\n\n**Direct Costs:**\n- Senior Backend Dev (3-month): $45K\n- AWS Infrastructure: $1",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "6dec1c83-1794-4051-bd49-e38c9207fbe9",
+    "timestamp": "2026-04-19T01:01:24.094Z",
+    "type": "decision",
+    "agent_source": "orchestrator",
+    "text": "Command executed: Build a secure API backend",
+    "detail": {
+      "sessionId": "5223cff6-e2a8-4707-99c8-b657bfd8b26a"
+    },
+    "status": "active"
+  },
+  {
+    "record_id": "46c9781d-2809-405a-b1f7-eb376a567ea7",
+    "timestamp": "2026-04-19T01:01:24.095Z",
+    "type": "project",
+    "agent_source": "orchestrator",
+    "text": "Active project: Build a secure API backend",
+    "detail": {
+      "sessionId": "5223cff6-e2a8-4707-99c8-b657bfd8b26a"
+    },
+    "status": "active"
+  },
+  {
+    "record_id": "97b035e9-b770-4c27-b7f7-95a36eacbdd3",
+    "timestamp": "2026-04-19T02:00:45.650Z",
+    "type": "context",
+    "agent_source": "ceo",
+    "text": "CEO command received: See how your AI team thinks differently under different risk profiles.",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "75b6d587-9b72-4224-b7d8-efb56147b946",
+    "timestamp": "2026-04-19T02:01:08.441Z",
+    "type": "outcome",
+    "agent_source": "hr",
+    "text": "hr output: **ROLES NEEDED:**\n• **AI Research Lead** - PhD/MS in ML, 3+ years production AI, risk modeling experience\n• **Behavioral",
+    "detail": {},
+    "status": "active"
+  },
+  {
+    "record_id": "19a3b35c-5545-474a-9493-2af87f49355a",
+    "timestamp": "2026-04-19T02:01:17.557Z",
+    "type": "decision",
+    "agent_source": "orchestrator",
+    "text": "Command executed: See how your AI team thinks differently under different risk profiles.",
+    "detail": {
+      "sessionId": "5217057d-2be3-45e4-aa74-5d84d895d6fd"
+    },
+    "status": "active"
+  }
+]

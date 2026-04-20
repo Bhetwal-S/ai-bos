@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>AI-BOS · Command Center</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#07080f;--surface:#0e1018;--surface2:#13161f;--border:#1c2035;--border2:#252a40;
+      --text:#e8edf5;--muted:#5a6480;--muted2:#8892aa;
+      --indigo:#6366f1;--indigo2:#818cf8;--indigo-dim:rgba(99,102,241,0.12);
+      --green:#34d399;--amber:#f59e0b;--red:#f87171;--blue:#60a5fa;--purple:#a78bfa;--orange:#fb923c;
+      --sidebar:240px;--topbar:56px;
+    }
+    html,body{height:100%;overflow:hidden}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex}
+
+    /* SIDEBAR */
+    #sidebar{width:var(--sidebar);min-width:var(--sidebar);height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;position:relative;overflow:hidden}
+    #sidebar::before{content:'';position:absolute;top:0;left:0;right:0;height:200px;background:radial-gradient(ellipse 120% 100% at 50% 0%,rgba(99,102,241,0.08) 0%,transparent 70%);pointer-events:none}
+    .sb-logo{padding:18px 16px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+    .sb-logo-mark{width:32px;height:32px;background:linear-gradient(135deg,#6366f1,#a78bfa);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+    .sb-logo-text{font-size:1rem;font-weight:700;letter-spacing:-0.02em}
+    .sb-logo-sub{font-size:0.62rem;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase}
+    .sb-workspace{margin:10px 10px 0;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:border-color .2s}
+    .sb-workspace:hover{border-color:var(--border2)}
+    .ws-dot{width:7px;height:7px;background:var(--green);border-radius:50%;flex-shrink:0}
+    .ws-name{font-size:0.79rem;font-weight:500;flex:1}
+    .sb-nav{flex:1;overflow-y:auto;padding:8px 0;scrollbar-width:none}
+    .sb-nav::-webkit-scrollbar{display:none}
+    .sb-section{padding:10px 14px 3px;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)}
+    .sb-link{display:flex;align-items:center;gap:9px;padding:7px 14px;font-size:0.81rem;color:var(--muted2);text-decoration:none;border-radius:6px;margin:1px 8px;transition:all .15s;cursor:pointer;position:relative;border:none;background:none;width:calc(100% - 16px);text-align:left}
+    .sb-link:hover{background:var(--surface2);color:var(--text)}
+    .sb-link.active{background:var(--indigo-dim);color:var(--indigo2)}
+    .sb-icon{font-size:0.95rem;width:18px;text-align:center;flex-shrink:0}
+    .sb-badge{margin-left:auto;background:var(--surface2);color:var(--muted2);border-radius:10px;font-size:0.62rem;font-weight:600;padding:1px 6px;border:1px solid var(--border)}
+    .sb-badge.red{background:rgba(248,113,113,0.12);color:var(--red);border-color:rgba(248,113,113,0.2)}
+    .sb-badge.green{background:rgba(52,211,153,0.1);color:var(--green);border-color:rgba(52,211,153,0.2)}
+    .sb-badge.indigo{background:var(--indigo-dim);color:var(--indigo2);border-color:rgba(99,102,241,0.2)}
+    .sb-children{padding-left:8px;display:none}
+    .sb-children.open{display:block}
+    .sb-user{padding:12px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:9px;cursor:pointer}
+    .sb-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0}
+    .sb-user-name{font-size:0.78rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+    .sb-user-role{font-size:0.65rem;color:var(--muted)}
+
+    /* MAIN */
+    #main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;min-width:0}
+
+    /* TOPBAR */
+    #topbar{height:var(--topbar);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 20px;flex-shrink:0}
+    .top-search{flex:1;max-width:460px;position:relative}
+    .top-search input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 12px 7px 34px;font-size:0.81rem;color:var(--text);outline:none;transition:border-color .2s;font-family:inherit;cursor:pointer}
+    .top-search input:focus{border-color:var(--indigo)}
+    .top-search input::placeholder{color:var(--muted)}
+    .top-si{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:0.82rem;pointer-events:none}
+    .top-kbd{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:0.6rem;color:var(--muted);background:var(--border);padding:2px 5px;border-radius:3px}
+    .top-spacer{flex:1}
+    .top-btn{width:34px;height:34px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.95rem;transition:border-color .2s;position:relative}
+    .top-btn:hover{border-color:var(--border2)}
+    .notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--red);border-radius:50%;border:2px solid var(--surface);display:none}
+    .top-time{font-size:0.73rem;color:var(--muted);padding:0 6px}
+
+    /* CONTENT */
+    #content{flex:1;overflow-y:auto;padding:20px 24px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+    #content::-webkit-scrollbar{width:4px}
+    #content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+    .page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
+    .page-title{font-size:1.4rem;font-weight:700;letter-spacing:-0.03em}
+    .page-sub{font-size:0.76rem;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:5px}
+    .btn{padding:7px 14px;border-radius:7px;font-size:0.78rem;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+    .btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+    .btn-ghost:hover{border-color:var(--border2)}
+    .btn-primary{background:var(--indigo);color:#fff}
+    .btn-primary:hover{filter:brightness(1.1)}
+
+    /* KPI */
+    .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+    .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;overflow:hidden;transition:border-color .2s;cursor:default}
+    .kpi-card:hover{border-color:var(--border2)}
+    .kpi-accent{position:absolute;top:0;left:0;right:0;height:2px}
+    .kpi-label{font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px}
+    .kpi-value{font-size:1.65rem;font-weight:700;letter-spacing:-0.03em;line-height:1}
+    .kpi-delta{font-size:0.7rem;color:var(--muted);margin-top:6px}
+    .delta-up{color:var(--green)}
+    .delta-down{color:var(--red)}
+
+    /* WIDGET GRID */
+    .widget-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+    .widget{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s}
+    .widget:hover{border-color:var(--border2)}
+    .widget-header{padding:13px 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+    .widget-title{font-size:0.82rem;font-weight:600;display:flex;align-items:center;gap:6px}
+    .widget-link{font-size:0.72rem;color:var(--indigo2);text-decoration:none;cursor:pointer}
+    .widget-link:hover{color:var(--indigo)}
+    .widget-body{padding:13px 16px}
+
+    /* dept tiles */
+    .dept-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+    .dept-tile{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:12px;text-decoration:none;display:block;transition:all .2s;position:relative;overflow:hidden}
+    .dept-tile:hover{border-color:var(--border2);transform:translateY(-1px)}
+    .dept-tile-icon{font-size:1.2rem;margin-bottom:6px}
+    .dept-tile-name{font-size:0.75rem;font-weight:600;color:var(--text)}
+    .dept-tile-kpi{font-size:0.67rem;color:var(--muted);margin-top:2px}
+    .dept-tile-bar{position:absolute;bottom:0;left:0;right:0;height:2px;opacity:0.6}
+
+    /* feed */
+    .feed-item{display:flex;gap:9px;padding:8px 0;border-bottom:1px solid var(--border)}
+    .feed-item:last-child{border-bottom:none}
+    .feed-dot{width:6px;height:6px;border-radius:50%;margin-top:5px;flex-shrink:0}
+    .feed-main{font-size:0.77rem;line-height:1.4}
+    .feed-time{font-size:0.67rem;color:var(--muted);margin-top:1px}
+
+    /* council */
+    .council-item{padding:8px 11px;border-radius:7px;margin-bottom:5px;font-size:0.77rem;border-left:2px solid}
+    .council-item.system{background:rgba(99,102,241,0.06);border-color:var(--indigo);color:var(--muted2)}
+    .council-item.agent-update,.council-item.agent-action,.council-item.agent{background:var(--surface2);border-color:var(--border2)}
+    .council-item.synthesis{background:rgba(52,211,153,0.05);border-color:var(--green)}
+    .council-agent-name{font-size:0.68rem;font-weight:600;margin-bottom:2px}
+    .council-msg{line-height:1.45}
+
+    /* cmd widget */
+    .cmd-wrap{position:relative;margin-bottom:10px}
+    .cmd-ta{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:9px 13px 9px 36px;font-size:0.81rem;color:var(--text);outline:none;font-family:inherit;transition:border-color .2s;resize:none}
+    .cmd-ta:focus{border-color:var(--indigo)}
+    .cmd-ta::placeholder{color:var(--muted)}
+    .cmd-icon{position:absolute;left:11px;top:10px;color:var(--indigo2);pointer-events:none}
+    .chips{display:flex;flex-wrap:wrap;gap:5px}
+    .chip{padding:4px 9px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:0.7rem;color:var(--muted2);cursor:pointer;transition:all .15s}
+    .chip:hover{border-color:var(--indigo);color:var(--indigo2)}
+    .ai-out{margin-top:10px;display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:11px;font-size:0.79rem;line-height:1.65;max-height:150px;overflow-y:auto;white-space:pre-wrap;color:var(--text)}
+
+    /* stat row */
+    .stat-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)}
+    .stat-row:last-child{border-bottom:none}
+    .stat-label{font-size:0.75rem;color:var(--muted2)}
+    .stat-val{font-size:0.8rem;font-weight:500}
+    .prog{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:6px}
+    .prog-fill{height:100%;border-radius:2px}
+
+    /* COMMAND PALETTE */
+    #palette-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:none;align-items:flex-start;justify-content:center;padding-top:80px;backdrop-filter:blur(4px)}
+    #palette-overlay.open{display:flex}
+    #palette-box{background:var(--surface);border:1px solid var(--border2);border-radius:13px;width:560px;max-height:58vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 30px 70px rgba(0,0,0,0.7)}
+    .pal-in-row{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--border)}
+    .pal-in-row input{flex:1;background:none;border:none;outline:none;font-size:0.92rem;color:var(--text);font-family:inherit}
+    .pal-in-row input::placeholder{color:var(--muted)}
+    .pal-results{overflow-y:auto}
+    .pal-section{padding:7px 12px 2px;font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em}
+    .pal-item{display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;transition:background .1s;text-decoration:none;color:var(--text);border:none;background:none;width:100%;text-align:left;font-family:inherit}
+    .pal-item:hover,.pal-item.sel{background:var(--indigo-dim)}
+    .pal-item-icon{font-size:0.95rem;width:20px;text-align:center}
+    .pal-item-label{font-size:0.81rem;flex:1}
+    .pal-item-sub{font-size:0.68rem;color:var(--muted)}
+
+    /* NOTIF PANEL */
+    #notif-panel{position:fixed;top:var(--topbar);right:0;width:330px;height:calc(100vh - var(--topbar));background:var(--surface);border-left:1px solid var(--border);z-index:200;transform:translateX(100%);transition:transform .22s;display:flex;flex-direction:column}
+    #notif-panel.open{transform:translateX(0)}
+    .np-header{padding:14px 16px 11px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .np-title{font-size:0.86rem;font-weight:600}
+    .np-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:2px}
+    .np-list{flex:1;overflow-y:auto;padding:8px}
+    .np-item{padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;border-left:3px solid}
+    .np-item-title{font-size:0.77rem;font-weight:500}
+    .np-item-body{font-size:0.71rem;color:var(--muted);margin-top:2px}
+    .np-empty{text-align:center;color:var(--muted);font-size:0.78rem;padding:36px 16px}
+
+    /* MODAL */
+    .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+    .modal-bg.open{display:flex}
+    .modal-box{background:var(--surface);border:1px solid var(--border2);border-radius:13px;width:660px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 30px 70px rgba(0,0,0,0.65)}
+    .modal-hd{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .modal-hd-title{font-size:0.9rem;font-weight:600}
+    .modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem}
+    .modal-bd{flex:1;overflow-y:auto;padding:20px}
+    .modal-ft{padding:13px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+
+    /* LIVE DOT */
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .live-dot{display:inline-block;width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+
+    @media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(3,1fr)}.widget-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:860px){#sidebar{display:none}.widget-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<aside id="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-mark">🤖</div>
+    <div>
+      <div class="sb-logo-text">AI-BOS</div>
+      <div class="sb-logo-sub">Business OS</div>
+    </div>
+  </div>
+
+  <div class="sb-workspace">
+    <div class="ws-dot"></div>
+    <span class="ws-name" id="sb-ws">My Workspace</span>
+    <span style="color:var(--muted);font-size:0.65rem">▾</span>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-section">Main</div>
+    <a href="/dashboard" class="sb-link active"><span class="sb-icon">🏠</span>Dashboard</a>
+    <button class="sb-link" onclick="openPalette()"><span class="sb-icon">⌘</span>Command<span class="sb-badge indigo">K</span></button>
+    <a href="/war-room" class="sb-link"><span class="sb-icon">💬</span>War Room</a>
+
+    <div class="sb-section">Departments</div>
+    <button class="sb-link" onclick="toggleDepts()" style="font-weight:500">
+      <span class="sb-icon">🏢</span><span style="flex:1">All Departments</span><span id="dc">▾</span>
+    </button>
+    <div class="sb-children open" id="dept-children">
+      <a href="/department/it" class="sb-link"><span class="sb-icon">☁️</span>IT & DevOps<span class="sb-badge red" id="sb-it">–</span></a>
+      <a href="/department/finance" class="sb-link"><span class="sb-icon">💰</span>Finance<span class="sb-badge green" id="sb-fin">–</span></a>
+      <a href="/department/hr" class="sb-link"><span class="sb-icon">👥</span>HR & Talent<span class="sb-badge" id="sb-hr">–</span></a>
+      <a href="/department/marketing" class="sb-link"><span class="sb-icon">📣</span>Marketing<span class="sb-badge" id="sb-mkt">–</span></a>
+      <a href="/department/sales" class="sb-link"><span class="sb-icon">📈</span>Sales & CRM<span class="sb-badge" id="sb-sales">–</span></a>
+    </div>
+
+    <div class="sb-section">Platform</div>
+    <a href="/agent-council" class="sb-link"><span class="sb-icon">🤝</span>Agent Council<span class="sb-badge indigo" id="sb-council">–</span></a>
+    <a href="/approval-queue" class="sb-link"><span class="sb-icon">⚡</span>Approval Queue<span class="sb-badge red" id="sb-approvals">–</span></a>
+    <a href="/goals" class="sb-link"><span class="sb-icon">🎯</span>Agent Goals</a>
+    <a href="/identity-hub" class="sb-link"><span class="sb-icon">🔐</span>Identity Hub</a>
+    <a href="/company-hub" class="sb-link"><span class="sb-icon">📚</span>Company Hub</a>
+
+    <div class="sb-section">More Departments</div>
+    <a href="/department/legal" class="sb-link"><span class="sb-icon">⚖️</span>Legal</a>
+    <a href="/department/operations" class="sb-link"><span class="sb-icon">⚙️</span>Operations</a>
+
+    <div class="sb-section">Tools</div>
+    <button class="sb-link" onclick="openReport()"><span class="sb-icon">📋</span>Weekly Report</button>
+    <a href="/settings" class="sb-link"><span class="sb-icon">⚙️</span>Settings</a>
+    <button class="sb-link" onclick="signOut()"><span class="sb-icon">🚪</span>Sign Out</button>
+  </nav>
+
+  <div class="sb-user">
+    <div class="sb-avatar" id="sb-avatar">?</div>
+    <div style="flex:1;min-width:0">
+      <div class="sb-user-name" id="sb-user-name">Loading…</div>
+      <div class="sb-user-role" id="sb-user-role">–</div>
+    </div>
+    <span style="color:var(--muted);font-size:0.7rem">⋯</span>
+  </div>
+</aside>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<div id="main">
+  <div id="topbar">
+    <div class="top-search">
+      <span class="top-si">🔍</span>
+      <input placeholder="Search or run a command…" onclick="openPalette()" readonly>
+      <span class="top-kbd">⌘K</span>
+    </div>
+    <div class="top-spacer"></div>
+    <div class="top-time" id="top-time"></div>
+    <div class="top-btn" onclick="toggleNotif()" title="Notifications">🔔<span class="notif-dot" id="notif-dot"></span></div>
+    <div class="top-btn" onclick="cycleTheme()" title="Theme">🎨</div>
+    <div class="top-btn" onclick="openReport()" style="background:var(--indigo-dim);border-color:rgba(99,102,241,0.3)" title="Weekly Report">📋</div>
+  </div>
+
+  <div id="content">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Command Center</div>
+        <div class="page-sub"><span class="live-dot"></span> Live &nbsp;·&nbsp; Last refresh: <span id="last-ref">–</span></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="load()">↺ Refresh</button>
+        <button class="btn btn-primary" onclick="openPalette()">⌘ Command</button>
+      </div>
+    </div>
+
+    <!-- KPI CARDS -->
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-accent" style="background:#378ADD"></div><div class="kpi-label">☁️ Open Tickets</div><div class="kpi-value" id="kv-tickets">–</div><div class="kpi-delta" id="kd-tickets"></div></div>
+      <div class="kpi-card"><div class="kpi-accent" style="background:var(--green)"></div><div class="kpi-label">💰 Net P&amp;L</div><div class="kpi-value" id="kv-pnl">–</div><div class="kpi-delta" id="kd-pnl"></div></div>
+      <div class="kpi-card"><div class="kpi-accent" style="background:var(--purple)"></div><div class="kpi-label">👥 Headcount</div><div class="kpi-value" id="kv-hc">–</div><div class="kpi-delta" id="kd-hc"></div></div>
+      <div class="kpi-card"><div class="kpi-accent" style="background:var(--amber)"></div><div class="kpi-label">📣 Live Campaigns</div><div class="kpi-value" id="kv-camps">–</div><div class="kpi-delta" id="kd-camps"></div></div>
+      <div class="kpi-card"><div class="kpi-accent" style="background:var(--orange)"></div><div class="kpi-label">📈 Pipeline Value</div><div class="kpi-value" id="kv-pipe">–</div><div class="kpi-delta" id="kd-pipe"></div></div>
+    </div>
+
+    <!-- WIDGET GRID -->
+    <div class="widget-grid">
+
+      <!-- AI Autopilot -->
+      <div class="widget" style="grid-column:span 2">
+        <div class="widget-header">
+          <div class="widget-title">✦ AI Autopilot</div>
+          <span class="live-dot"></span>
+        </div>
+        <div class="widget-body">
+          <div class="cmd-wrap">
+            <span class="cmd-icon">✦</span>
+            <textarea class="cmd-ta" id="ai-input" rows="2" placeholder="Ask anything… 'Summarize critical tickets', 'What's our cash runway?', 'Which deals are closing soon?'"></textarea>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <button class="btn btn-primary" onclick="runAI()" style="font-size:0.75rem;padding:6px 12px">Run ↵</button>
+            <div class="chips">
+              <span class="chip" onclick="setQ('Summarize all critical IT tickets')">🎫 IT</span>
+              <span class="chip" onclick="setQ('Analyze our current cash flow and burn rate')">💰 Finance</span>
+              <span class="chip" onclick="setQ('Top employees by performance rating')">👥 HR</span>
+              <span class="chip" onclick="setQ('Best performing marketing campaigns')">📣 Marketing</span>
+              <span class="chip" onclick="setQ('Deals closest to closing this week')">📈 Sales</span>
+            </div>
+          </div>
+          <div class="ai-out" id="ai-out"></div>
+        </div>
+      </div>
+
+      <!-- Agent Council -->
+      <div class="widget" style="grid-row:span 2">
+        <div class="widget-header">
+          <div class="widget-title">🤝 Agent Council <span class="live-dot" id="council-live" style="display:none"></span></div>
+          <a href="/agent-council" class="widget-link">View all →</a>
+        </div>
+        <div class="widget-body" style="max-height:370px;overflow-y:auto;padding:10px 13px" id="council-feed">
+          <div style="color:var(--muted);font-size:0.77rem;text-align:center;padding:24px 0">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Departments -->
+      <div class="widget">
+        <div class="widget-header">
+          <div class="widget-title">🏢 Departments</div>
+          <span class="widget-link" onclick="load()">Refresh</span>
+        </div>
+        <div class="widget-body">
+          <div class="dept-grid">
+            <a href="/department/it" class="dept-tile"><div class="dept-tile-icon">☁️</div><div class="dept-tile-name">IT</div><div class="dept-tile-kpi" id="dt-it">–</div><div class="dept-tile-bar" style="background:#378ADD"></div></a>
+            <a href="/department/finance" class="dept-tile"><div class="dept-tile-icon">💰</div><div class="dept-tile-name">Finance</div><div class="dept-tile-kpi" id="dt-fin">–</div><div class="dept-tile-bar" style="background:#34d399"></div></a>
+            <a href="/department/hr" class="dept-tile"><div class="dept-tile-icon">👥</div><div class="dept-tile-name">HR</div><div class="dept-tile-kpi" id="dt-hr">–</div><div class="dept-tile-bar" style="background:#a78bfa"></div></a>
+            <a href="/department/marketing" class="dept-tile"><div class="dept-tile-icon">📣</div><div class="dept-tile-name">Marketing</div><div class="dept-tile-kpi" id="dt-mkt">–</div><div class="dept-tile-bar" style="background:#f59e0b"></div></a>
+            <a href="/department/sales" class="dept-tile"><div class="dept-tile-icon">📈</div><div class="dept-tile-name">Sales</div><div class="dept-tile-kpi" id="dt-sales">–</div><div class="dept-tile-bar" style="background:#fb923c"></div></a>
+            <a href="/agent-council" class="dept-tile"><div class="dept-tile-icon">🤖</div><div class="dept-tile-name">Council</div><div class="dept-tile-kpi">Autonomous</div><div class="dept-tile-bar" style="background:#6366f1"></div></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Activity -->
+      <div class="widget">
+        <div class="widget-header">
+          <div class="widget-title">📡 Live Activity</div>
+          <span class="widget-link" onclick="loadActivity()">Refresh</span>
+        </div>
+        <div class="widget-body" style="max-height:240px;overflow-y:auto;padding:4px 13px" id="activity-feed">
+          <div style="color:var(--muted);font-size:0.77rem;text-align:center;padding:20px 0">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Platform -->
+      <div class="widget">
+        <div class="widget-header"><div class="widget-title">🔗 Platform</div></div>
+        <div class="widget-body">
+          <div class="stat-row"><span class="stat-label">🔐 Identity Hub</span><a href="/identity-hub" class="widget-link">Open →</a></div>
+          <div class="stat-row"><span class="stat-label">📚 Company Hub</span><a href="/company-hub" class="widget-link">Open →</a></div>
+          <div class="stat-row"><span class="stat-label">💬 War Room</span><a href="/war-room" class="widget-link">Open →</a></div>
+          <div class="stat-row"><span class="stat-label">🤝 Agent Council</span><a href="/agent-council" class="widget-link">Open →</a></div>
+          <div style="margin-top:12px">
+            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px">SYSTEM HEALTH</div>
+            <div style="font-size:0.76rem;color:var(--green);display:flex;align-items:center;gap:5px"><span class="live-dot"></span> All systems operational</div>
+            <div class="prog" style="margin-top:8px"><div class="prog-fill" style="width:97%;background:var(--green)"></div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATIONS PANEL -->
+<div id="notif-panel">
+  <div class="np-header">
+    <span class="np-title">🔔 Notifications</span>
+    <button class="np-close" onclick="toggleNotif()">✕</button>
+  </div>
+  <div class="np-list" id="np-list"><div class="np-empty">No notifications</div></div>
+</div>
+
+<!-- COMMAND PALETTE -->
+<div id="palette-overlay" onclick="closePaletteOuter(event)">
+  <div id="palette-box">
+    <div class="pal-in-row">
+      <span style="color:var(--indigo2)">⌘</span>
+      <input id="pal-input" placeholder="Search pages, run commands…" oninput="filterPal(this.value)" onkeydown="palKey(event)" autocomplete="off">
+      <span style="font-size:0.68rem;color:var(--muted)">ESC to close</span>
+    </div>
+    <div class="pal-results" id="pal-results"></div>
+  </div>
+</div>
+
+<!-- WEEKLY REPORT MODAL -->
+<div id="report-modal" class="modal-bg" onclick="closeReportOuter(event)">
+  <div class="modal-box">
+    <div class="modal-hd">
+      <span class="modal-hd-title">📋 Weekly AI Report</span>
+      <button class="modal-close" onclick="document.getElementById('report-modal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-bd" id="report-bd">
+      <div style="color:var(--muted);text-align:center;padding:40px 0;font-size:0.82rem">Click "Generate" to create this week's AI executive briefing.</div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="document.getElementById('report-modal').classList.remove('open')">Close</button>
+      <button class="btn btn-primary" onclick="genReport()">✦ Generate Report</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOKEN = localStorage.getItem('aibos_token');
+if (!TOKEN) location.href = '/login';
+const WS = localStorage.getItem('aibos_workspace') || 'default';
+
+async function api(url, opts={}) {
+  return fetch(url, { headers:{ Authorization:`Bearer ${TOKEN}`, 'x-workspace':WS, 'Content-Type':'application/json', ...(opts.headers||{}) }, ...opts });
+}
+
+// Time
+function tick() { document.getElementById('top-time').textContent = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); }
+setInterval(tick,1000); tick();
+
+// User
+async function loadUser() {
+  try {
+    const r = await api('/api/me'); if(!r.ok) return;
+    const u = await r.json();
+    const name = u.username||u.email||'User';
+    document.getElementById('sb-user-name').textContent = name;
+    document.getElementById('sb-user-role').textContent = u.role||'member';
+    document.getElementById('sb-avatar').textContent = name[0].toUpperCase();
+  } catch{}
+}
+
+// Formatting
+function fc(n){ return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',notation:'compact',maximumFractionDigits:1}).format(n); }
+function ta(iso){ const s=Math.floor((Date.now()-new Date(iso))/1000); if(s<60)return s+'s ago'; if(s<3600)return Math.floor(s/60)+'m ago'; if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
+
+// KPIs
+async function loadKPIs() {
+  try {
+    const [tR,lR,eR,cR,pR] = await Promise.all([
+      api('/api/it/tickets'), api('/api/finance/ledger'), api('/api/hr/employees'),
+      api('/api/marketing/campaigns'), api('/api/sales/pipeline'),
+    ]);
+    const [tickets,ledger,employees,campaigns,pipeData] = await Promise.all([tR.json(),lR.json(),eR.json(),cR.json(),pR.json()]);
+
+    const openT = tickets.filter(t=>t.status==='open').length;
+    const critT = tickets.filter(t=>t.priority==='critical').length;
+    const rev = ledger.filter(e=>e.type==='revenue').reduce((s,e)=>s+e.amount,0);
+    const exp = ledger.filter(e=>e.type==='expense').reduce((s,e)=>s+e.amount,0);
+    const net = rev-exp;
+    const hc = employees.filter(e=>e.status==='active').length;
+    const ac = campaigns.filter(c=>c.status==='active').length;
+    const pv = pipeData.totalValue||0;
+    const pw = pipeData.weighted||0;
+
+    set('kv-tickets', openT);
+    setD('kd-tickets', critT>0?`⚠ ${critT} critical`:'✓ No critical', critT>0?'delta-down':'delta-up');
+    set('kv-pnl', fc(net));
+    setD('kd-pnl', net>=0?'▲ Profitable':'▼ Net loss', net>=0?'delta-up':'delta-down');
+    set('kv-hc', hc);
+    setD('kd-hc', `of ${employees.length} total`, '');
+    set('kv-camps', ac);
+    setD('kd-camps', `${campaigns.length} total`, '');
+    set('kv-pipe', fc(pv));
+    setD('kd-pipe', `Weighted ${fc(pw)}`, 'delta-up');
+
+    document.getElementById('sb-it').textContent = openT;
+    document.getElementById('sb-fin').textContent = net>=0?'+':'–';
+    document.getElementById('sb-hr').textContent = hc;
+    document.getElementById('sb-mkt').textContent = ac;
+    document.getElementById('sb-sales').textContent = fc(pv);
+
+    document.getElementById('dt-it').textContent = `${openT} open`;
+    document.getElementById('dt-fin').textContent = fc(net)+' net';
+    document.getElementById('dt-hr').textContent = `${hc} active`;
+    document.getElementById('dt-mkt').textContent = `${ac} live`;
+    document.getElementById('dt-sales').textContent = fc(pv);
+
+    buildNotifs(critT, net, pipeData.totalOpen||0);
+
+    // Pending approvals badge
+    try {
+      const aqR = await api('/api/actions/queue');
+      if (aqR.ok) {
+        const q = await aqR.json();
+        const pending = q.filter(a => a.status === 'pending').length;
+        const el = document.getElementById('sb-approvals');
+        if (el) { el.textContent = pending > 0 ? pending : '–'; }
+        if (pending > 0) notifs.push({ title:'⚡ Agent Actions Pending', body:`${pending} agent actions need your approval`, color:'var(--amber)' });
+      }
+    } catch {}
+  } catch(e){console.error(e);}
+}
+function set(id,v){ document.getElementById(id).textContent=v; }
+function setD(id,v,cls){ const el=document.getElementById(id); el.textContent=v; el.className='kpi-delta '+cls; }
+
+// Notifications
+let notifs=[];
+function buildNotifs(critT,net,openDeals){
+  notifs=[];
+  if(critT>0) notifs.push({title:'🚨 Critical Tickets',body:`${critT} IT tickets need immediate attention`,color:'var(--red)'});
+  if(net<0) notifs.push({title:'💰 Negative P&L',body:'Expenses are exceeding revenue',color:'var(--red)'});
+  if(openDeals>0) notifs.push({title:'📈 Open Deals',body:`${openDeals} deals active in pipeline`,color:'var(--green)'});
+  document.getElementById('notif-dot').style.display = notifs.length?'block':'none';
+  renderNotifs();
+}
+function renderNotifs(){
+  const el=document.getElementById('np-list');
+  if(!notifs.length){el.innerHTML='<div class="np-empty">✓ All clear</div>';return;}
+  el.innerHTML=notifs.map(n=>`<div class="np-item" style="border-left-color:${n.color}"><div class="np-item-title">${n.title}</div><div class="np-item-body">${n.body}</div></div>`).join('');
+}
+function toggleNotif(){ document.getElementById('notif-panel').classList.toggle('open'); }
+
+// Activity
+async function loadActivity(){
+  try{
+    const r=await api('/api/activity'); if(!r.ok)return;
+    const items=await r.json();
+    const DC={it:'#378ADD',finance:'#34d399',hr:'#a78bfa',marketing:'#f59e0b',sales:'#fb923c'};
+    const el=document.getElementById('activity-feed');
+    if(!items.length){el.innerHTML='<div style="color:var(--muted);font-size:0.77rem;text-align:center;padding:20px 0">No recent activity</div>';return;}
+    el.innerHTML=items.slice(0,14).map(i=>`<div class="feed-item"><div class="feed-dot" style="background:${DC[i.dept]||'#5a6480'}"></div><div><div class="feed-main">${i.text}</div><div class="feed-time">${i.dept} · ${ta(i.date)}</div></div></div>`).join('');
+  }catch{}
+}
+
+// Council Feed
+async function loadCouncil(){
+  try{
+    const [fR,sR]=await Promise.all([api('/api/council/feed?limit=6'),api('/api/council/state')]);
+    const items=fR.ok?await fR.json():[];
+    const state=sR.ok?await sR.json():{};
+    const running=state.running;
+    document.getElementById('council-live').style.display=running?'inline-block':'none';
+    document.getElementById('sb-council').textContent=running?'●':'–';
+    const el=document.getElementById('council-feed');
+    if(!items.length){el.innerHTML='<div style="color:var(--muted);font-size:0.77rem;text-align:center;padding:24px 0">Council not yet active<br><br><a href="/agent-council" style="color:var(--indigo2);font-size:0.75rem">Start Agent Council →</a></div>';return;}
+    el.innerHTML=items.slice(0,5).map(item=>`<div class="council-item ${item.type||'agent'}">${item.agent?`<div class="council-agent-name" style="color:${item.color||'var(--muted2)'}">${item.emoji||''} ${item.agent}</div>`:''}
+      <div class="council-msg">${(item.message||'').slice(0,200)}${(item.message||'').length>200?'…':''}</div></div>`).join('');
+  }catch{}
+}
+
+// AI Autopilot
+function setQ(t){ document.getElementById('ai-input').value=t; }
+async function runAI(){
+  const q=document.getElementById('ai-input').value.trim(); if(!q)return;
+  const out=document.getElementById('ai-out');
+  out.style.display='block'; out.textContent='✦ Thinking…';
+  try{
+    const r=await api('/api/autopilot',{method:'POST',body:JSON.stringify({dept:'all',prompt:q})});
+    const d=await r.json();
+    out.textContent=d.response||d.error||'No response';
+  }catch{ out.textContent='Error contacting AI'; }
+}
+document.getElementById('ai-input').addEventListener('keydown',e=>{ if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)) runAI(); });
+
+// Weekly Report
+function openReport(){ document.getElementById('report-modal').classList.add('open'); }
+function closeReportOuter(e){ if(e.target===document.getElementById('report-modal')) document.getElementById('report-modal').classList.remove('open'); }
+async function genReport(){
+  const bd=document.getElementById('report-bd');
+  bd.innerHTML='<div style="color:var(--muted);text-align:center;padding:40px 0">✦ Generating…</div>';
+  try{
+    const r=await api('/api/report/weekly');
+    const d=await r.json();
+    bd.innerHTML=`<div style="white-space:pre-wrap;font-size:0.8rem;line-height:1.7">${d.report||d.error}</div>`;
+  }catch{ bd.innerHTML='<div style="color:var(--red);padding:20px">Failed to generate.</div>'; }
+}
+
+// Command Palette
+const PAL=[
+  {label:'Dashboard',sub:'Home',icon:'🏠',href:'/dashboard',sec:'Pages'},
+  {label:'IT & DevOps',sub:'Department',icon:'☁️',href:'/department/it',sec:'Pages'},
+  {label:'Finance',sub:'Department',icon:'💰',href:'/department/finance',sec:'Pages'},
+  {label:'HR & Talent',sub:'Department',icon:'👥',href:'/department/hr',sec:'Pages'},
+  {label:'Marketing',sub:'Department',icon:'📣',href:'/department/marketing',sec:'Pages'},
+  {label:'Sales & CRM',sub:'Department',icon:'📈',href:'/department/sales',sec:'Pages'},
+  {label:'War Room',sub:'Collaboration',icon:'💬',href:'/war-room',sec:'Pages'},
+  {label:'Agent Council',sub:'Platform',icon:'🤝',href:'/agent-council',sec:'Pages'},
+  {label:'Identity Hub',sub:'Platform',icon:'🔐',href:'/identity-hub',sec:'Pages'},
+  {label:'Company Hub',sub:'Platform',icon:'📚',href:'/company-hub',sec:'Pages'},
+  {label:'Generate Report',sub:'Action',icon:'📋',action:'report',sec:'Actions'},
+  {label:'Refresh KPIs',sub:'Action',icon:'↺',action:'refresh',sec:'Actions'},
+  {label:'Sign Out',sub:'Action',icon:'🚪',action:'signout',sec:'Actions'},
+];
+let palSel=0,palFiltered=[...PAL];
+function openPalette(){ document.getElementById('palette-overlay').classList.add('open'); document.getElementById('pal-input').focus(); renderPal(); }
+function closePaletteOuter(e){ if(!document.getElementById('palette-box').contains(e.target)) document.getElementById('palette-overlay').classList.remove('open'); }
+function filterPal(q){ palFiltered=q?PAL.filter(i=>(i.label+i.sub).toLowerCase().includes(q.toLowerCase())):[...PAL]; palSel=0; renderPal(); }
+function renderPal(){
+  const secs={};
+  palFiltered.forEach(i=>{ (secs[i.sec]=secs[i.sec]||[]).push(i); });
+  let idx=0;
+  document.getElementById('pal-results').innerHTML=Object.entries(secs).map(([s,items])=>
+    `<div class="pal-section">${s}</div>`+items.map(item=>{
+      const cls=idx++===palSel?'pal-item sel':'pal-item';
+      if(item.href) return `<a class="${cls}" href="${item.href}"><span class="pal-item-icon">${item.icon}</span><span class="pal-item-label">${item.label}</span><span class="pal-item-sub">${item.sub}</span></a>`;
+      return `<button class="${cls}" onclick="palAction('${item.action}')"><span class="pal-item-icon">${item.icon}</span><span class="pal-item-label">${item.label}</span><span class="pal-item-sub">${item.sub}</span></button>`;
+    }).join('')
+  ).join('');
+}
+function palKey(e){
+  if(e.key==='Escape'){ document.getElementById('palette-overlay').classList.remove('open'); return; }
+  if(e.key==='ArrowDown'){ palSel=Math.min(palSel+1,palFiltered.length-1); renderPal(); }
+  if(e.key==='ArrowUp'){ palSel=Math.max(palSel-1,0); renderPal(); }
+  if(e.key==='Enter'){ const item=palFiltered[palSel]; if(item){ if(item.href) location.href=item.href; else palAction(item.action); document.getElementById('palette-overlay').classList.remove('open'); } }
+}
+function palAction(a){ if(a==='report'){openReport();genReport();} else if(a==='refresh') load(); else if(a==='signout') signOut(); }
+document.addEventListener('keydown',e=>{ if((e.metaKey||e.ctrlKey)&&e.key==='k'){ e.preventDefault(); openPalette(); } });
+
+// Theme cycling
+const THEMES=[
+  {i:'#6366f1',i2:'#818cf8',bg:'#07080f',s:'#0e1018'},
+  {i:'#14b8a6',i2:'#2dd4bf',bg:'#060a0a',s:'#0c1212'},
+  {i:'#f43f5e',i2:'#fb7185',bg:'#0a0608',s:'#120b0e'},
+  {i:'#8b5cf6',i2:'#a78bfa',bg:'#080710',s:'#0e0d18'},
+];
+let ti=0;
+function cycleTheme(){
+  ti=(ti+1)%THEMES.length; const t=THEMES[ti];
+  const r=document.documentElement.style;
+  r.setProperty('--indigo',t.i); r.setProperty('--indigo2',t.i2);
+  r.setProperty('--indigo-dim',t.i+'1e');
+  r.setProperty('--bg',t.bg); r.setProperty('--surface',t.s);
+}
+
+function toggleDepts(){
+  const c=document.getElementById('dept-children');
+  const o=c.classList.toggle('open');
+  document.getElementById('dc').textContent=o?'▾':'▸';
+}
+function signOut(){ localStorage.clear(); location.href='/login'; }
+
+async function load(){
+  document.getElementById('last-ref').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  await Promise.all([loadKPIs(),loadActivity(),loadCouncil()]);
+}
+loadUser(); load(); setInterval(load,60000);
+
+// ── WebSocket live updates ──
+(function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const ws = new WebSocket(`${proto}//${location.host}`);
+  ws.onmessage = e => {
+    try {
+      const { event, data } = JSON.parse(e.data);
+      if (event === 'connected') return;
+      // Debounce reload on any data change event
+      clearTimeout(window._wsReloadTimer);
+      window._wsReloadTimer = setTimeout(load, 800);
+    } catch {}
+  };
+  ws.onclose = () => setTimeout(connectWS, 5000); // auto-reconnect
+})();
+</script>
+</body>
+</html>
