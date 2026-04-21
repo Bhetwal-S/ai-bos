@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>AI-BOS · AI Insights</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#07080f;--surface:#0e1018;--surface2:#13161f;--border:#1c2035;--border2:#252a40;--text:#e8edf5;--muted:#5a6480;--muted2:#8892aa;--indigo:#6366f1;--indigo2:#818cf8;--indigo-dim:rgba(99,102,241,0.12);--green:#34d399;--amber:#f59e0b;--red:#f87171;--purple:#a78bfa;--cyan:#67e8f9;}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(99,102,241,0.08) 0%,transparent 70%);pointer-events:none}
+    #app{position:relative;z-index:1}
+    nav{height:54px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 20px}
+    .back{text-decoration:none;color:var(--muted2);font-size:0.82rem;transition:color .15s}.back:hover{color:var(--text)}
+    .nav-badge{padding:4px 10px;background:var(--indigo-dim);border:1px solid rgba(99,102,241,0.3);color:var(--indigo2);border-radius:20px;font-size:0.78rem;font-weight:600}
+    .nav-spacer{flex:1}
+    .btn{padding:7px 14px;border-radius:7px;font-size:0.78rem;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+    .btn-primary{background:var(--indigo);color:#fff}.btn-primary:hover{filter:brightness(1.1)}
+    main{max-width:1100px;margin:0 auto;padding:24px}
+    .page-title{font-size:1.3rem;font-weight:700;letter-spacing:-.02em;margin-bottom:4px}
+    .page-sub{font-size:0.76rem;color:var(--muted);margin-bottom:24px}
+
+    .insight-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+    @media(max-width:800px){.insight-grid{grid-template-columns:1fr}}
+    .insight-full{margin-bottom:14px}
+
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
+    .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .card-title{font-size:0.85rem;font-weight:600}
+    .card-sub{font-size:0.7rem;color:var(--muted);margin-top:2px}
+
+    /* Agent insight cards */
+    .agent-insight{border-left:3px solid var(--agent-color,var(--indigo));padding:14px 16px;background:var(--surface2);border-radius:0 8px 8px 0;margin-bottom:10px;position:relative}
+    .agent-insight:last-child{margin-bottom:0}
+    .ai-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+    .ai-emoji{font-size:1.1rem}
+    .ai-name{font-size:0.78rem;font-weight:700}
+    .ai-role{font-size:0.68rem;color:var(--muted2)}
+    .ai-body{font-size:0.8rem;line-height:1.65;color:var(--muted2)}
+    .ai-body strong{color:var(--text)}
+    .ai-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+    .ai-action-btn{padding:4px 10px;border-radius:6px;font-size:0.7rem;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-family:inherit;transition:all .15s}
+    .ai-action-btn:hover{background:var(--indigo-dim);border-color:rgba(99,102,241,0.4);color:var(--indigo2)}
+    .generating{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:0.8rem;padding:12px 0}
+    .dot-pulse{display:flex;gap:4px}
+    .dot-pulse span{width:6px;height:6px;border-radius:50%;background:var(--indigo);animation:dp 1.2s ease-in-out infinite}
+    .dot-pulse span:nth-child(2){animation-delay:.2s}
+    .dot-pulse span:nth-child(3){animation-delay:.4s}
+    @keyframes dp{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+
+    /* Risk matrix */
+    .risk-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+    .risk-item:last-child{border-bottom:none}
+    .risk-dot{width:10px;height:10px;border-radius:50%;margin-top:4px;flex-shrink:0}
+    .risk-title{font-size:0.8rem;font-weight:600;margin-bottom:2px}
+    .risk-desc{font-size:0.72rem;color:var(--muted2)}
+    .badge{display:inline-flex;padding:2px 7px;border-radius:10px;font-size:0.65rem;font-weight:600}
+    .badge-red{background:rgba(248,113,113,0.12);color:var(--red)}
+    .badge-amber{background:rgba(245,158,11,0.15);color:var(--amber)}
+    .badge-green{background:rgba(52,211,153,0.15);color:var(--green)}
+
+    /* Opportunity cards */
+    .opp-card{background:var(--surface2);border-radius:8px;padding:14px;margin-bottom:8px;border:1px solid var(--border);display:flex;gap:12px;align-items:flex-start}
+    .opp-icon{font-size:1.4rem;flex-shrink:0}
+    .opp-title{font-size:0.82rem;font-weight:600;margin-bottom:4px}
+    .opp-desc{font-size:0.75rem;color:var(--muted2);line-height:1.5}
+    .opp-value{font-size:0.72rem;color:var(--green);font-weight:600;margin-top:5px}
+
+    /* Score ring */
+    .score-section{display:flex;align-items:center;gap:24px;margin-bottom:16px}
+    .score-ring{position:relative;width:80px;height:80px;flex-shrink:0}
+    .score-ring svg{transform:rotate(-90deg)}
+    .score-number{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800}
+    .score-breakdown{flex:1}
+    .score-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:0.76rem}
+    .score-row-label{flex:1;color:var(--muted2)}
+    .score-row-bar{flex:2;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden}
+    .score-row-fill{height:100%;border-radius:3px;transition:width .6s}
+    .score-row-val{color:var(--text);font-weight:600;width:28px;text-align:right}
+
+    /* Weekly summary */
+    .summary-block{background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(167,139,250,0.05));border:1px solid rgba(99,102,241,0.15);border-radius:10px;padding:16px;font-size:0.82rem;line-height:1.8;color:var(--muted2)}
+    .summary-block strong{color:var(--text)}
+    .refresh-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.72rem;transition:color .15s}
+    .refresh-btn:hover{color:var(--indigo2)}
+  </style>
+</head>
+<body>
+<div id="app">
+  <nav>
+    <a href="/dashboard" class="back">← Dashboard</a>
+    <span class="nav-badge">🧠 AI Insights</span>
+    <div class="nav-spacer"></div>
+    <button class="btn btn-primary" onclick="generateAll()">⚡ Regenerate All</button>
+  </nav>
+  <main>
+    <div class="page-title">AI Insights</div>
+    <div class="page-sub">Deep analysis generated by your agent council — updated on demand</div>
+
+    <!-- Business health score -->
+    <div class="card insight-full">
+      <div class="card-header">
+        <div><div class="card-title">🏥 Business Health Score</div><div class="card-sub">Composite score across all departments</div></div>
+        <button class="refresh-btn" onclick="renderHealthScore()">↻ Refresh</button>
+      </div>
+      <div class="score-section" id="healthScore"></div>
+    </div>
+
+    <!-- Agent insights + Risks -->
+    <div class="insight-grid">
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">🤖 Agent Council Analysis</div><div class="card-sub">What each agent is thinking right now</div></div>
+        </div>
+        <div id="agentInsights"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">⚠️ Risk Matrix</div><div class="card-sub">Issues that need your attention</div></div>
+        </div>
+        <div id="riskMatrix"></div>
+      </div>
+    </div>
+
+    <!-- Opportunities + Weekly summary -->
+    <div class="insight-grid">
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">🚀 Opportunities</div><div class="card-sub">Actions that could grow your business</div></div>
+        </div>
+        <div id="opportunities"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">📋 Weekly Executive Summary</div><div class="card-sub">AI-generated snapshot of your business</div></div>
+          <button class="refresh-btn" onclick="renderSummary()">↻</button>
+        </div>
+        <div id="weeklySummary"></div>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+let health = {};
+let queue = [];
+let log = [];
+
+async function loadData() {
+  [health, queue, log] = await Promise.all([
+    fetch('/api/health').then(r=>r.json()).catch(()=>({})),
+    fetch('/api/actions/queue').then(r=>r.json()).catch(()=>[]),
+    fetch('/api/actions/log').then(r=>r.json()).catch(()=>[]),
+  ]);
+  renderAll();
+}
+
+function renderAll() {
+  renderHealthScore();
+  renderAgentInsights();
+  renderRisks();
+  renderOpportunities();
+  renderSummary();
+}
+
+function generateAll() {
+  document.getElementById('agentInsights').innerHTML = `<div class="generating"><div class="dot-pulse"><span></span><span></span><span></span></div> Agents analysing your business…</div>`;
+  setTimeout(renderAll, 1200);
+}
+
+// ── Health Score ──────────────────────────────────────────────────────
+function renderHealthScore() {
+  const invoices = health.finance?.invoices || [];
+  const tickets = health.it?.tickets || [];
+  const employees = health.hr?.employees || [];
+  const campaigns = health.marketing?.campaigns || [];
+  const deals = health.sales?.deals || [];
+  const pending = queue.filter(a=>a.status==='pending').length;
+
+  const scores = {
+    Finance: Math.max(0, 100 - (invoices.filter(i=>i.status==='overdue').length * 20)),
+    IT: Math.max(0, 100 - (tickets.filter(t=>t.priority==='critical'&&t.status==='open').length * 25) - (tickets.filter(t=>t.status==='open').length * 5)),
+    HR: employees.length > 0 ? Math.round(employees.reduce((s,e)=>s+(e.performance||80),0)/employees.length) : 70,
+    Sales: deals.length > 0 ? Math.min(100, deals.filter(d=>d.stage==='Closed Won').length/deals.length*100 + 50) : 50,
+    Ops: Math.max(0, 100 - pending * 5),
+  };
+  const overall = Math.round(Object.values(scores).reduce((a,b)=>a+b,0)/Object.keys(scores).length);
+  const color = overall >= 75 ? '#34d399' : overall >= 50 ? '#f59e0b' : '#f87171';
+
+  const circumference = 2 * Math.PI * 32;
+  const offset = circumference - (overall/100) * circumference;
+
+  document.getElementById('healthScore').innerHTML = `
+    <div class="score-ring">
+      <svg width="80" height="80" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8"/>
+        <circle cx="40" cy="40" r="32" fill="none" stroke="${color}" stroke-width="8" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" stroke-linecap="round" style="transition:stroke-dashoffset .8s ease"/>
+      </svg>
+      <div class="score-number" style="color:${color}">${overall}</div>
+    </div>
+    <div class="score-breakdown">
+      ${Object.entries(scores).map(([k,v])=>`
+        <div class="score-row">
+          <div class="score-row-label">${k}</div>
+          <div class="score-row-bar"><div class="score-row-fill" style="width:${v}%;background:${v>=75?'#34d399':v>=50?'#f59e0b':'#f87171'}"></div></div>
+          <div class="score-row-val">${Math.round(v)}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="flex:1;font-size:0.8rem;color:var(--muted2);line-height:1.6;padding:8px;background:var(--surface2);border-radius:8px">
+      ${overall>=75?'<strong style="color:var(--green)">Business is healthy</strong> — agents are monitoring and no critical issues detected.':overall>=50?'<strong style="color:var(--amber)">Attention needed</strong> — some departments need action. Check the risk matrix below.':'<strong style="color:var(--red)">Critical issues</strong> — multiple departments need immediate attention.'}
+    </div>
+  `;
+}
+
+// ── Agent Insights ────────────────────────────────────────────────────
+function renderAgentInsights() {
+  const invoices = health.finance?.invoices || [];
+  const tickets = health.it?.tickets || [];
+  const employees = health.hr?.employees || [];
+  const campaigns = health.marketing?.campaigns || [];
+  const deals = health.sales?.deals || [];
+
+  const overdue = invoices.filter(i=>i.status==='overdue');
+  const criticalTickets = tickets.filter(t=>t.priority==='critical'&&t.status==='open');
+  const activeDeals = deals.filter(d=>d.stage!=='Closed Won'&&d.stage!=='Closed Lost');
+  const pipelineVal = activeDeals.reduce((s,d)=>s+(d.value||0),0);
+
+  const agents = [
+    {
+      emoji:'🔵', name:'Ada', role:'CFO · Finance',
+      color:'#6366f1',
+      insight: overdue.length > 0
+        ? `<strong>${overdue.length} invoice${overdue.length>1?'s':''} overdue</strong> totalling <strong>$${overdue.reduce((s,i)=>s+(i.total||0),0).toLocaleString()}</strong>. I recommend sending reminder emails immediately. ${invoices.filter(i=>i.status==='paid').length} invoices paid this period — solid collection rate.`
+        : `All invoices are current — no overdue payments. <strong>${invoices.filter(i=>i.status==='pending').length} pending</strong> invoices worth $${invoices.filter(i=>i.status==='pending').reduce((s,i)=>s+(i.total||0),0).toLocaleString()}. Cash flow looks healthy.`,
+      actions:['View Finance','Send Reminders']
+    },
+    {
+      emoji:'🔴', name:'Viktor', role:'CTO · IT',
+      color:'#f87171',
+      insight: criticalTickets.length > 0
+        ? `<strong>${criticalTickets.length} critical ticket${criticalTickets.length>1?'s':''} open</strong> — "${criticalTickets[0]?.title}". This needs immediate attention. ${tickets.filter(t=>t.status==='open').length} total open tickets. Recommend assigning critical issues before end of day.`
+        : `No critical IT issues detected. <strong>${tickets.filter(t=>t.status==='open').length} standard tickets open</strong>. System health looks stable. Recommend weekly dependency audit.`,
+      actions:['View IT','Create Ticket']
+    },
+    {
+      emoji:'🟠', name:'Chase', role:'CSO · Sales',
+      color:'#f59e0b',
+      insight: activeDeals.length > 0
+        ? `Pipeline value <strong>$${pipelineVal.toLocaleString()}</strong> across <strong>${activeDeals.length} active deals</strong>. ${deals.filter(d=>d.stage==='Negotiation').length} in negotiation stage — highest priority. ${deals.filter(d=>d.probability>=75).length} deals at 75%+ probability — recommend closing push this week.`
+        : `No active deals in pipeline. Recommend adding prospects from your contact list and starting outreach campaigns to rebuild pipeline.`,
+      actions:['View Sales','Add Deal']
+    },
+    {
+      emoji:'🟢', name:'Maxwell', role:'CMO · Marketing',
+      color:'#34d399',
+      insight: campaigns.filter(c=>c.status==='active').length > 0
+        ? `<strong>${campaigns.filter(c=>c.status==='active').length} active campaigns</strong> running. Total leads generated: <strong>${campaigns.reduce((s,c)=>s+(c.leads||0),0)}</strong>. ${campaigns.filter(c=>c.leads===0&&c.status==='active').length > 0 ? '<strong style="color:#f59e0b">Warning: some campaigns have zero leads</strong> — review targeting.' : 'All campaigns generating leads — good momentum.'}`
+        : `No active campaigns. Recommend launching a LinkedIn outreach or email campaign to generate leads for the sales pipeline.`,
+      actions:['View Marketing','New Campaign']
+    },
+  ];
+
+  document.getElementById('agentInsights').innerHTML = agents.map(a=>`
+    <div class="agent-insight" style="--agent-color:${a.color}">
+      <div class="ai-header">
+        <div class="ai-emoji">${a.emoji}</div>
+        <div><div class="ai-name">${a.name}</div><div class="ai-role">${a.role}</div></div>
+      </div>
+      <div class="ai-body">${a.insight}</div>
+      <div class="ai-actions">${a.actions.map(btn=>`<button class="ai-action-btn">${btn}</button>`).join('')}</div>
+    </div>
+  `).join('');
+}
+
+// ── Risk Matrix ───────────────────────────────────────────────────────
+function renderRisks() {
+  const invoices = health.finance?.invoices || [];
+  const tickets = health.it?.tickets || [];
+  const deals = health.sales?.deals || [];
+  const pending = queue.filter(a=>a.status==='pending').length;
+
+  const risks = [];
+
+  invoices.filter(i=>i.status==='overdue').forEach(inv => {
+    risks.push({ level:'high', title:`${inv.client} invoice overdue`, desc:`$${inv.total?.toLocaleString()} — follow up immediately` });
+  });
+  tickets.filter(t=>t.priority==='critical'&&t.status==='open').forEach(t => {
+    risks.push({ level:'critical', title:`Critical IT: ${t.title}`, desc:'Production impact possible — assign immediately' });
+  });
+  if(pending > 3) risks.push({ level:'medium', title:`${pending} agent actions awaiting approval`, desc:'Review your approval queue to unblock agents' });
+  deals.filter(d=>d.stage==='Negotiation'&&d.closeDate&&new Date(d.closeDate)<Date.now()+7*86400000).forEach(d => {
+    risks.push({ level:'medium', title:`Deal closing soon: ${d.title}`, desc:`$${d.value?.toLocaleString()} — close date approaching` });
+  });
+
+  if(risks.length === 0) risks.push({ level:'low', title:'No significant risks detected', desc:'All departments operating within normal parameters' });
+
+  const colors = { critical:'#f87171', high:'#f59e0b', medium:'#818cf8', low:'#34d399' };
+  const badges = { critical:'badge-red', high:'badge-amber', medium:'badge-blue', low:'badge-green' };
+
+  document.getElementById('riskMatrix').innerHTML = risks.map(r=>`
+    <div class="risk-item">
+      <div class="risk-dot" style="background:${colors[r.level]}"></div>
+      <div>
+        <div class="risk-title">${r.title} <span class="badge ${badges[r.level]}">${r.level}</span></div>
+        <div class="risk-desc">${r.desc}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Opportunities ─────────────────────────────────────────────────────
+function renderOpportunities() {
+  const invoices = health.finance?.invoices || [];
+  const deals = health.sales?.deals || [];
+  const campaigns = health.marketing?.campaigns || [];
+
+  const opps = [];
+
+  const draftInvoice = invoices.find(i=>i.status==='draft');
+  if(draftInvoice) opps.push({ icon:'💰', title:'Send draft invoice', desc:`${draftInvoice.client} has an unsent invoice worth $${draftInvoice.total?.toLocaleString()}. Sending it today improves cash flow.`, value:`+$${draftInvoice.total?.toLocaleString()} potential` });
+
+  const highProbDeal = deals.find(d=>d.probability>=75&&d.stage!=='Closed Won');
+  if(highProbDeal) opps.push({ icon:'🤝', title:`Close ${highProbDeal.title}`, desc:`At ${highProbDeal.probability}% probability — a follow-up call this week could seal this deal.`, value:`+$${highProbDeal.value?.toLocaleString()} revenue` });
+
+  if(campaigns.filter(c=>c.status==='planned').length > 0) opps.push({ icon:'📣', title:'Launch planned campaigns', desc:`You have ${campaigns.filter(c=>c.status==='planned').length} campaign(s) ready to go. Launching now builds pipeline.`, value:'Lead generation boost' });
+
+  opps.push({ icon:'📱', title:'Install AI-BOS on your phone', desc:'Visit getaibos.com on mobile and add to home screen for instant access and push notifications.', value:'Always-on visibility' });
+
+  if(opps.length === 0) opps.push({ icon:'🌱', title:'Add more data to unlock insights', desc:'The more data your agents have, the better their recommendations become.', value:'Better AI insights' });
+
+  document.getElementById('opportunities').innerHTML = opps.map(o=>`
+    <div class="opp-card">
+      <div class="opp-icon">${o.icon}</div>
+      <div>
+        <div class="opp-title">${o.title}</div>
+        <div class="opp-desc">${o.desc}</div>
+        <div class="opp-value">${o.value}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Weekly Summary ────────────────────────────────────────────────────
+function renderSummary() {
+  const invoices = health.finance?.invoices || [];
+  const tickets = health.it?.tickets || [];
+  const employees = health.hr?.employees || [];
+  const deals = health.sales?.deals || [];
+  const campaigns = health.marketing?.campaigns || [];
+
+  const revenue = invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+(i.total||0),0);
+  const pipeline = deals.filter(d=>d.stage!=='Closed Won'&&d.stage!=='Closed Lost').reduce((s,d)=>s+(d.value||0),0);
+
+  document.getElementById('weeklySummary').innerHTML = `
+    <div class="summary-block">
+      <strong>Executive Summary — ${new Date().toLocaleDateString('en',{month:'long',day:'numeric',year:'numeric'})}</strong><br/><br/>
+      Your business currently has <strong>${employees.filter(e=>e.status==='active').length} active team members</strong> across all departments.
+      Finance shows <strong>$${revenue.toLocaleString()} in collected revenue</strong> with ${invoices.filter(i=>i.status==='overdue').length} overdue invoice${invoices.filter(i=>i.status==='overdue').length!==1?'s':''} requiring follow-up.<br/><br/>
+      Sales pipeline stands at <strong>$${pipeline.toLocaleString()}</strong> across ${deals.filter(d=>d.stage!=='Closed Won'&&d.stage!=='Closed Lost').length} active deals.
+      ${deals.filter(d=>d.probability>=75).length > 0 ? `<strong>${deals.filter(d=>d.probability>=75).length} deal${deals.filter(d=>d.probability>=75).length>1?'s':''}</strong> at high probability — prioritise closing.` : 'No deals at high probability yet.'}<br/><br/>
+      IT has <strong>${tickets.filter(t=>t.status==='open').length} open tickets</strong>${tickets.filter(t=>t.priority==='critical'&&t.status==='open').length>0?`, including <strong style="color:var(--red)">${tickets.filter(t=>t.priority==='critical'&&t.status==='open').length} critical</strong>`:''}.
+      Marketing is running <strong>${campaigns.filter(c=>c.status==='active').length} active campaigns</strong> generating ${campaigns.reduce((s,c)=>s+(c.leads||0),0)} total leads.<br/><br/>
+      <strong>Agent recommendation:</strong> Focus on closing high-probability deals and resolving overdue invoices this week.
+    </div>
+  `;
+}
+
+loadData();
+</script>
+</body>
+</html>
