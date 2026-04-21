@@ -38,7 +38,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'ui')));
+app.use(express.static(path.join(__dirname, 'ui'), { index: false }));
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'ui', 'landing.html')));
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'ui', 'login.html')));
