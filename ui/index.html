@@ -4,6 +4,11 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>AI-BOS · Command Center</title>
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="theme-color" content="#6366f1"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="AI-BOS"/>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
@@ -226,6 +231,7 @@
     <a href="/approval-queue" class="sb-link"><span class="sb-icon">⚡</span>Approval Queue<span class="sb-badge red" id="sb-approvals">–</span></a>
     <a href="/goals" class="sb-link"><span class="sb-icon">🎯</span>Agent Goals</a>
     <a href="/analytics" class="sb-link"><span class="sb-icon">📊</span>Analytics</a>
+    <a href="/calendar" class="sb-link"><span class="sb-icon">📅</span>Calendar</a>
     <a href="/identity-hub" class="sb-link"><span class="sb-icon">🔐</span>Identity Hub</a>
     <a href="/company-hub" class="sb-link"><span class="sb-icon">📚</span>Company Hub</a>
 
@@ -641,6 +647,7 @@ async function load(){
   await Promise.all([loadKPIs(),loadActivity(),loadCouncil()]);
 }
 loadUser(); load(); setInterval(load,60000);
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 
 // ── WebSocket live updates ──
 (function connectWS() {

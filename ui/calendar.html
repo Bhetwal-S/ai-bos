@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>AI-BOS · Calendar</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#07080f;--surface:#0e1018;--surface2:#13161f;--border:#1c2035;--border2:#252a40;--text:#e8edf5;--muted:#5a6480;--muted2:#8892aa;--indigo:#6366f1;--indigo2:#818cf8;--indigo-dim:rgba(99,102,241,0.12);--green:#34d399;--amber:#f59e0b;--red:#f87171;--purple:#a78bfa;--cyan:#67e8f9;}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(99,102,241,0.08) 0%,transparent 70%);pointer-events:none}
+    #app{position:relative;z-index:1}
+
+    nav{height:54px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 20px}
+    .back{text-decoration:none;color:var(--muted2);font-size:0.82rem;transition:color .15s}.back:hover{color:var(--text)}
+    .nav-badge{padding:4px 10px;background:var(--indigo-dim);border:1px solid rgba(99,102,241,0.3);color:var(--indigo2);border-radius:20px;font-size:0.78rem;font-weight:600}
+    .nav-spacer{flex:1}
+    .btn{padding:7px 14px;border-radius:7px;font-size:0.78rem;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+    .btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-ghost:hover{border-color:var(--border2)}
+    .btn-primary{background:var(--indigo);color:#fff}.btn-primary:hover{filter:brightness(1.1)}
+
+    main{max-width:1300px;margin:0 auto;padding:24px;display:grid;grid-template-columns:1fr 320px;gap:20px}
+    @media(max-width:900px){main{grid-template-columns:1fr}}
+
+    /* ── Calendar ── */
+    .cal-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
+    .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+    .cal-title{font-size:1.1rem;font-weight:700}
+    .cal-nav{display:flex;gap:8px;align-items:center}
+    .cal-nav button{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:0.8rem;transition:all .15s}
+    .cal-nav button:hover{border-color:var(--border2)}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+    .cal-day-name{text-align:center;font-size:0.65rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:8px 0}
+    .cal-cell{min-height:90px;background:var(--surface2);border-radius:6px;padding:6px;cursor:pointer;transition:all .15s;border:1px solid transparent;position:relative}
+    .cal-cell:hover{border-color:var(--border2);background:#161820}
+    .cal-cell.today{border-color:rgba(99,102,241,0.5);background:rgba(99,102,241,0.06)}
+    .cal-cell.other-month{opacity:0.35}
+    .cal-cell.selected{border-color:var(--indigo);background:rgba(99,102,241,0.1)}
+    .cal-date{font-size:0.75rem;font-weight:600;margin-bottom:4px;color:var(--muted2)}
+    .cal-cell.today .cal-date{color:var(--indigo2);font-weight:700}
+    .cal-event{font-size:0.62rem;padding:2px 5px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+    .ev-indigo{background:rgba(99,102,241,0.2);color:var(--indigo2)}
+    .ev-green{background:rgba(52,211,153,0.15);color:var(--green)}
+    .ev-amber{background:rgba(245,158,11,0.15);color:var(--amber)}
+    .ev-red{background:rgba(248,113,113,0.12);color:var(--red)}
+    .ev-purple{background:rgba(167,139,250,0.15);color:var(--purple)}
+    .ev-cyan{background:rgba(103,232,249,0.15);color:var(--cyan)}
+    .more-events{font-size:0.6rem;color:var(--muted);margin-top:2px}
+
+    /* ── Sidebar ── */
+    .sidebar-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+    .sidebar-title{font-size:0.82rem;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+    .event-item{padding:10px 0;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start}
+    .event-item:last-child{border-bottom:none}
+    .event-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0}
+    .event-title{font-size:0.8rem;font-weight:500;margin-bottom:2px}
+    .event-meta{font-size:0.7rem;color:var(--muted2)}
+    .event-badge{display:inline-flex;padding:1px 6px;border-radius:10px;font-size:0.62rem;font-weight:600;margin-top:3px}
+
+    /* ── Add event modal ── */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+    .modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:24px;width:100%;max-width:460px}
+    .modal-title{font-size:1rem;font-weight:700;margin-bottom:16px}
+    .form-group{margin-bottom:14px}
+    .form-label{font-size:0.74rem;color:var(--muted2);margin-bottom:5px;display:block}
+    .form-input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:7px;font-family:inherit;font-size:0.82rem;outline:none;transition:border .15s}
+    .form-input:focus{border-color:var(--indigo)}
+    select.form-input option{background:var(--surface2)}
+    .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+    .hidden{display:none!important}
+
+    /* ── Day detail ── */
+    .day-detail{background:var(--surface2);border-radius:8px;padding:12px;margin-top:12px}
+    .day-detail-title{font-size:0.78rem;font-weight:600;margin-bottom:8px;color:var(--indigo2)}
+  </style>
+</head>
+<body>
+<div id="app">
+  <nav>
+    <a href="/dashboard" class="back">← Dashboard</a>
+    <span class="nav-badge">📅 Calendar</span>
+    <div class="nav-spacer"></div>
+    <button class="btn btn-primary" onclick="openModal()">+ Add Event</button>
+  </nav>
+
+  <main>
+    <!-- Calendar -->
+    <div class="cal-card">
+      <div class="cal-header">
+        <div class="cal-title" id="calTitle"></div>
+        <div class="cal-nav">
+          <button onclick="changeMonth(-1)">‹ Prev</button>
+          <button onclick="goToday()">Today</button>
+          <button onclick="changeMonth(1)">Next ›</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+
+    <!-- Sidebar -->
+    <div>
+      <!-- Upcoming events -->
+      <div class="sidebar-card">
+        <div class="sidebar-title">🗓 Upcoming Events</div>
+        <div id="upcomingList"></div>
+      </div>
+
+      <!-- Selected day -->
+      <div class="sidebar-card" id="dayPanel" style="display:none">
+        <div class="sidebar-title">📌 <span id="dayPanelTitle"></span></div>
+        <div id="dayEventList"></div>
+      </div>
+
+      <!-- Agent events -->
+      <div class="sidebar-card">
+        <div class="sidebar-title">🤖 Auto-scheduled by Agents</div>
+        <div id="agentEventList"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Add Event Modal -->
+<div class="modal-overlay hidden" id="modal">
+  <div class="modal">
+    <div class="modal-title">Add Event</div>
+    <div class="form-group">
+      <label class="form-label">Title</label>
+      <input class="form-input" id="evTitle" placeholder="e.g. Follow up with client"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Date</label>
+      <input class="form-input" type="date" id="evDate"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Type</label>
+      <select class="form-input" id="evType">
+        <option value="meeting">📅 Meeting</option>
+        <option value="deadline">⏰ Deadline</option>
+        <option value="followup">📞 Follow-up</option>
+        <option value="invoice">💰 Invoice</option>
+        <option value="contract">⚖️ Contract</option>
+        <option value="other">📌 Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes (optional)</label>
+      <input class="form-input" id="evNotes" placeholder="Any extra details"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEvent()">Save Event</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentDate = new Date();
+let selectedDate = null;
+let events = JSON.parse(localStorage.getItem('aibos_calendar') || '[]');
+
+// ── Auto-generate events from business data ────────────────────────────
+async function loadAgentEvents() {
+  try {
+    const health = await fetch('/api/health').then(r=>r.json()).catch(()=>({}));
+    const agentEvents = [];
+
+    // Overdue invoices
+    (health.finance?.invoices||[]).filter(i=>i.status==='overdue').forEach(inv => {
+      agentEvents.push({ id:'ag_'+inv.id, title:`💰 Follow up: ${inv.client} invoice`, date: today(), type:'invoice', agent:true, color:'red', notes:`$${inv.total?.toLocaleString()} overdue` });
+    });
+
+    // Pending invoices due soon
+    (health.finance?.invoices||[]).filter(i=>i.status==='pending').forEach(inv => {
+      if(inv.dueDate) agentEvents.push({ id:'ag_due_'+inv.id, title:`💳 Invoice due: ${inv.client}`, date: inv.dueDate.slice(0,10), type:'invoice', agent:true, color:'amber', notes:`$${inv.total?.toLocaleString()} pending` });
+    });
+
+    // Deal close dates
+    (health.sales?.deals||[]).filter(d=>d.closeDate&&d.stage!=='Closed Won'&&d.stage!=='Closed Lost').forEach(deal => {
+      agentEvents.push({ id:'ag_deal_'+deal.id, title:`💼 Deal close: ${deal.title}`, date: deal.closeDate.slice(0,10), type:'deadline', agent:true, color:'indigo', notes:`$${deal.value?.toLocaleString()} — ${deal.stage}` });
+    });
+
+    // Contract expirations
+    (health.legal?.contracts||[]).filter(c=>c.endDate&&c.status==='active').forEach(contract => {
+      const daysLeft = Math.round((new Date(contract.endDate)-Date.now())/86400000);
+      if(daysLeft < 90) agentEvents.push({ id:'ag_con_'+contract.id, title:`⚖️ Contract expiry: ${contract.title}`, date: contract.endDate.slice(0,10), type:'contract', agent:true, color:'purple', notes:`${daysLeft} days remaining` });
+    });
+
+    // Critical tickets
+    (health.it?.tickets||[]).filter(t=>t.priority==='critical'&&t.status==='open').forEach(ticket => {
+      agentEvents.push({ id:'ag_tick_'+ticket.id, title:`🎫 Critical ticket: ${ticket.title}`, date: today(), type:'deadline', agent:true, color:'red', notes:'Needs immediate attention' });
+    });
+
+    // Merge agent events (avoid duplicates)
+    const existingIds = events.map(e=>e.id);
+    const newAgentEvents = agentEvents.filter(e=>!existingIds.includes(e.id));
+    events = [...events.filter(e=>!e.agent), ...agentEvents.filter(e=>{
+      const manual = events.find(m=>m.id===e.id&&!m.agent);
+      return !manual;
+    })];
+
+    renderCalendar();
+    renderUpcoming();
+    renderAgentEvents(agentEvents);
+  } catch(e) { console.error(e); }
+}
+
+function today() { return new Date().toISOString().slice(0,10); }
+
+// ── Calendar render ────────────────────────────────────────────────────
+function renderCalendar() {
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('calTitle').textContent = `${monthNames[month]} ${year}`;
+
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+
+  // Day headers
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'cal-day-name';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const daysInPrev = new Date(year, month, 0).getDate();
+  const todayStr = today();
+
+  // Prev month padding
+  for(let i=firstDay-1;i>=0;i--) {
+    const cell = makeCell(year, month-1, daysInPrev-i, true);
+    grid.appendChild(cell);
+  }
+
+  // Current month
+  for(let d=1;d<=daysInMonth;d++) {
+    const cell = makeCell(year, month, d, false);
+    grid.appendChild(cell);
+  }
+
+  // Next month padding
+  const total = firstDay + daysInMonth;
+  const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for(let d=1;d<=remaining;d++) {
+    const cell = makeCell(year, month+1, d, true);
+    grid.appendChild(cell);
+  }
+}
+
+function makeCell(year, month, day, otherMonth) {
+  const date = new Date(year, month, day);
+  const dateStr = date.toISOString().slice(0,10);
+  const todayStr = today();
+  const dayEvents = events.filter(e=>e.date===dateStr);
+
+  const cell = document.createElement('div');
+  cell.className = 'cal-cell' + (otherMonth?' other-month':'') + (dateStr===todayStr?' today':'') + (selectedDate===dateStr?' selected':'');
+  cell.onclick = () => selectDay(dateStr);
+
+  const dateEl = document.createElement('div');
+  dateEl.className = 'cal-date';
+  dateEl.textContent = day;
+  cell.appendChild(dateEl);
+
+  const colors = {meeting:'indigo',deadline:'red',followup:'cyan',invoice:'amber',contract:'purple',other:'green'};
+  dayEvents.slice(0,3).forEach(ev => {
+    const el = document.createElement('div');
+    el.className = `cal-event ev-${colors[ev.type]||'indigo'}`;
+    el.textContent = ev.title;
+    cell.appendChild(el);
+  });
+
+  if(dayEvents.length > 3) {
+    const more = document.createElement('div');
+    more.className = 'more-events';
+    more.textContent = `+${dayEvents.length-3} more`;
+    cell.appendChild(more);
+  }
+
+  return cell;
+}
+
+function selectDay(dateStr) {
+  selectedDate = dateStr;
+  renderCalendar();
+  const dayEvents = events.filter(e=>e.date===dateStr);
+  const panel = document.getElementById('dayPanel');
+  const d = new Date(dateStr+'T12:00:00');
+  document.getElementById('dayPanelTitle').textContent = d.toLocaleDateString('en',{weekday:'long',month:'long',day:'numeric'});
+
+  if(dayEvents.length === 0) {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = '';
+  const colors = {meeting:'#6366f1',deadline:'#f87171',followup:'#67e8f9',invoice:'#f59e0b',contract:'#a78bfa',other:'#34d399'};
+  document.getElementById('dayEventList').innerHTML = dayEvents.map(ev=>`
+    <div class="event-item">
+      <div class="event-dot" style="background:${colors[ev.type]||'#6366f1'}"></div>
+      <div>
+        <div class="event-title">${ev.title}</div>
+        ${ev.notes?`<div class="event-meta">${ev.notes}</div>`:''}
+        <div class="event-meta">${ev.agent?'🤖 Auto-scheduled':'📌 Manual'}</div>
+      </div>
+      ${!ev.agent?`<button onclick="deleteEvent('${ev.id}')" style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.8rem">✕</button>`:''}
+    </div>
+  `).join('');
+}
+
+// ── Upcoming events ────────────────────────────────────────────────────
+function renderUpcoming() {
+  const todayStr = today();
+  const upcoming = events
+    .filter(e=>e.date>=todayStr)
+    .sort((a,b)=>a.date.localeCompare(b.date))
+    .slice(0,6);
+
+  const colors = {meeting:'#6366f1',deadline:'#f87171',followup:'#67e8f9',invoice:'#f59e0b',contract:'#a78bfa',other:'#34d399'};
+  document.getElementById('upcomingList').innerHTML = upcoming.length ? upcoming.map(ev=>{
+    const d = new Date(ev.date+'T12:00:00');
+    const isToday = ev.date===todayStr;
+    const isTomorrow = ev.date===new Date(Date.now()+86400000).toISOString().slice(0,10);
+    const label = isToday?'Today':isTomorrow?'Tomorrow':d.toLocaleDateString('en',{month:'short',day:'numeric'});
+    return `
+      <div class="event-item">
+        <div class="event-dot" style="background:${colors[ev.type]||'#6366f1'}"></div>
+        <div style="flex:1">
+          <div class="event-title">${ev.title}</div>
+          <div class="event-meta">${label}${ev.notes?' · '+ev.notes:''}</div>
+        </div>
+      </div>`;
+  }).join('') : '<div style="color:var(--muted);font-size:0.78rem">No upcoming events</div>';
+}
+
+function renderAgentEvents(agentEvents) {
+  document.getElementById('agentEventList').innerHTML = agentEvents.length ? agentEvents.slice(0,5).map(ev=>`
+    <div class="event-item">
+      <div class="event-dot" style="background:var(--indigo)"></div>
+      <div>
+        <div class="event-title">${ev.title}</div>
+        <div class="event-meta">${ev.notes||''}</div>
+      </div>
+    </div>
+  `).join('') : '<div style="color:var(--muted);font-size:0.78rem">No agent events yet — add some data to departments first</div>';
+}
+
+// ── Add event ──────────────────────────────────────────────────────────
+function openModal() {
+  document.getElementById('evDate').value = selectedDate || today();
+  document.getElementById('modal').classList.remove('hidden');
+}
+function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+
+function saveEvent() {
+  const title = document.getElementById('evTitle').value.trim();
+  const date = document.getElementById('evDate').value;
+  const type = document.getElementById('evType').value;
+  const notes = document.getElementById('evNotes').value.trim();
+  if(!title || !date) return alert('Please add a title and date');
+
+  const ev = { id: Math.random().toString(36).slice(2), title, date, type, notes, agent:false, createdAt: new Date().toISOString() };
+  events.push(ev);
+  saveEvents();
+  closeModal();
+  document.getElementById('evTitle').value = '';
+  document.getElementById('evNotes').value = '';
+  renderCalendar();
+  renderUpcoming();
+  if(selectedDate === date) selectDay(date);
+}
+
+function deleteEvent(id) {
+  events = events.filter(e=>e.id!==id);
+  saveEvents();
+  renderCalendar();
+  renderUpcoming();
+  if(selectedDate) selectDay(selectedDate);
+}
+
+function saveEvents() {
+  localStorage.setItem('aibos_calendar', JSON.stringify(events.filter(e=>!e.agent)));
+}
+
+function changeMonth(dir) {
+  currentDate.setMonth(currentDate.getMonth()+dir);
+  renderCalendar();
+}
+function goToday() {
+  currentDate = new Date();
+  renderCalendar();
+}
+
+// ── WebSocket live updates ─────────────────────────────────────────────
+(function connectWS() {
+  const proto = location.protocol==='https:'?'wss:':'ws:';
+  const ws = new WebSocket(`${proto}//${location.host}`);
+  ws.onmessage = e => {
+    try { const {event}=JSON.parse(e.data); if(event&&event!=='connected') loadAgentEvents(); } catch{}
+  };
+  ws.onclose = () => setTimeout(connectWS, 5000);
+})();
+
+renderCalendar();
+renderUpcoming();
+loadAgentEvents();
+</script>
+</body>
+</html>

@@ -444,6 +444,7 @@ app.get('/settings', (req, res) => res.sendFile(path.join(__dirname, 'ui', 'sett
 app.get('/approval-queue', (req, res) => res.sendFile(path.join(__dirname, 'ui', 'approval-queue.html')));
 app.get('/goals', (req, res) => res.sendFile(path.join(__dirname, 'ui', 'goals.html')));
 app.get('/analytics', (req, res) => res.sendFile(path.join(__dirname, 'ui', 'analytics.html')));
+app.get('/calendar', (req, res) => res.sendFile(path.join(__dirname, 'ui', 'calendar.html')));
 
 // helper — broadcast if ws is ready
 function ws(event, data) { if (global.aibosWsBroadcast) global.aibosWsBroadcast(event, data); }

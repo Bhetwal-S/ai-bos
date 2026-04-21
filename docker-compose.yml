@@ -12,3 +12,7 @@ services:
       - .env
     environment:
       - NODE_ENV=production
+      - VIRTUAL_HOST=getaibos.com,www.getaibos.com
+      - VIRTUAL_PORT=3001
+      - LETSENCRYPT_HOST=getaibos.com,www.getaibos.com
+      - LETSENCRYPT_EMAIL=bhetwalsachin@aibos.com
